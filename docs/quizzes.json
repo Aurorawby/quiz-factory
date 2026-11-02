@@ -1,0 +1,46 @@
+{
+  "updated_at": "2026-11-01T18:08:48",
+  "count": 5,
+  "quizzes": [
+    {
+      "slug": "ai-pm",
+      "title": "测测你是哪种 AI 产品经理",
+      "subtitle": "8 道题，2 分钟，测出你的产品人格。面试前测一测，顺便想想短板。",
+      "emoji": "🧠",
+      "questions": 8,
+      "source": "preset"
+    },
+    {
+      "slug": "cat",
+      "title": "测测你是哪种小猫",
+      "subtitle": "8 道题，2 分钟，测出你骨子里是哪只猫。凭直觉选，没有标准答案。",
+      "emoji": "🐱",
+      "questions": 8,
+      "source": "preset"
+    },
+    {
+      "slug": "lit-reading",
+      "title": "测测你是哪种文献阅读人格",
+      "subtitle": "快速测出你的文献阅读习惯",
+      "emoji": "🎯",
+      "questions": 8,
+      "source": "generated"
+    },
+    {
+      "slug": "study-style",
+      "title": "测测你的期末复习风格：卷王还是躺平侠",
+      "subtitle": "快速测出你的复习风格",
+      "emoji": "🎯",
+      "questions": 8,
+      "source": "generated"
+    },
+    {
+      "slug": "travel",
+      "title": "测测你的假期旅行人格",
+      "subtitle": "快速了解你最适合哪种旅行方式",
+      "emoji": "🎯",
+      "questions": 8,
+      "source": "generated"
+    }
+  ]
+}

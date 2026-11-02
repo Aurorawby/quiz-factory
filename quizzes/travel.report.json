@@ -1,0 +1,66 @@
+{
+  "theme": "测测你的假期旅行人格",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "slug": "travel",
+  "stages": [
+    {
+      "stage": "skeleton",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "problems": [
+            "结果 010 的 emoji 不是单个 emoji",
+            "结果 100 的 emoji 不是单个 emoji"
+          ]
+        },
+        {
+          "attempt": 2,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 2
+    },
+    {
+      "stage": "questions",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    },
+    {
+      "stage": "copy",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    }
+  ],
+  "first_pass": false,
+  "final_problems": [],
+  "needs_polish": false,
+  "distribution": {
+    "000": 14.9,
+    "001": 13.9,
+    "010": 13.9,
+    "011": 12.9,
+    "100": 11.9,
+    "101": 11.1,
+    "110": 11.1,
+    "111": 10.3
+  },
+  "seconds": 408.7
+}

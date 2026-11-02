@@ -1,0 +1,73 @@
+{
+  "theme": "测测你的文献阅读人格",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "slug": "lit-reading",
+  "stages": [
+    {
+      "stage": "skeleton",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": false,
+          "problems": [
+            "结果 011 的 emoji 不是单个 emoji",
+            "结果 100 的 emoji 不是单个 emoji"
+          ]
+        },
+        {
+          "attempt": 2,
+          "ok": false,
+          "problems": [
+            "结果 011 的 emoji 不是单个 emoji"
+          ]
+        },
+        {
+          "attempt": 3,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 3
+    },
+    {
+      "stage": "questions",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    },
+    {
+      "stage": "copy",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    }
+  ],
+  "first_pass": false,
+  "final_problems": [],
+  "needs_polish": false,
+  "distribution": {
+    "000": 15.6,
+    "001": 15.2,
+    "010": 12.5,
+    "011": 12.2,
+    "100": 12.5,
+    "101": 12.2,
+    "110": 10.0,
+    "111": 9.8
+  },
+  "seconds": 507.3
+}

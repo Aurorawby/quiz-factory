@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测测你是哪种小猫</title>
+<meta name="description" content="8 道题，2 分钟，测出你骨子里是哪只猫。凭直觉选，没有标准答案。">
+<style>
+  :root{
+    --accent: #ff7a45;
+    --accent-soft: #ffe8dc;
+    --ink:#1f1b16; --muted:#7a7268; --card:#ffffff; --bg:#f7f2ea;
+    --radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #ffe9c9, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:560px}
+  .screen{display:none;animation:in .35s ease both}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+  .cover{text-align:center;padding:40px 26px 32px}
+  .cover .big-emoji{font-size:76px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.12))}
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:.5px}
+  .subtitle{color:var(--muted);font-size:15px;line-height:1.7;margin:0 auto 22px;max-width:26em}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .btn{
+    display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font-size:17px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,69,.28);
+    transition:transform .15s ease,box-shadow .15s ease
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}
+  .hint{color:var(--muted);font-size:12px;margin-top:14px}
+  /* 答题 */
+  .progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}
+  .meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:22px}
+  .back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}
+  .qtext{font-size:23px;line-height:1.5;font-weight:700;margin:6px 0 24px;letter-spacing:.3px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .option{
+    display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;
+    background:#fff;border:1.5px solid #eee2d2;border-radius:16px;padding:16px 18px;font-size:16.5px;
+    color:var(--ink);line-height:1.5;transition:all .16s ease
+  }
+  .option:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .option:active{background:var(--accent-soft)}
+  .option .letter{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center
+  }
+  /* 结果 */
+  .result{text-align:center}
+  .result .big-emoji{font-size:82px;line-height:1;margin:2px 0 6px}
+  .result .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}
+  .result h2{font-size:27px;margin:10px 0 12px}
+  .tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .rarity{color:var(--muted);font-size:12.5px;margin:0 0 18px;letter-spacing:.5px}
+  .desc{color:#4b443b;font-size:15.5px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:18px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;text-align:left}
+  .mini{background:#fbf7f1;border-radius:16px;padding:16px}
+  .mini h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:1px}
+  .mini p{margin:0;font-size:14px;line-height:1.65;color:#3f3a32}
+  .match{background:#fff7ea;border:1px dashed #e8cfa8;border-radius:16px;padding:14px 16px;font-size:14px;color:#7a5622;text-align:left;margin-bottom:22px}
+  .share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .share .btn{padding:14px 12px;font-size:15px}
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:18px}
+  .footer a{color:#8a5a1f;text-decoration:none}
+  @media (max-width:420px){ h1{font-size:26px} .qtext{font-size:20px} .cover{padding:32px 20px 26px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 封面 -->
+  <div class="screen active" id="cover">
+    <div class="card cover">
+      <div class="big-emoji">🐱</div>
+      <h1>测测你是哪种小猫</h1>
+      <p class="subtitle">8 道题，2 分钟，测出你骨子里是哪只猫。凭直觉选，没有标准答案。</p>
+      <div class="chips">
+        <span class="chip">📝 8 道题</span>
+        <span class="chip">⏱ 约 2 分钟</span>
+        <span class="chip">🎭 8 种结果</span>
+      </div>
+      <button class="btn" onclick="startQuiz()">开始测试 →</button>
+      <p class="hint">凭直觉选，没有标准答案</p>
+    </div>
+    <div class="footer">由 <b>Quiz Factory</b> 生成 · 单文件离线可用</div>
+  </div>
+
+  <!-- 答题 -->
+  <div class="screen" id="quiz">
+    <div class="card">
+      <div class="progress"><i id="bar"></i></div>
+      <div class="meta-row">
+        <button class="back" onclick="prev()">← 上一题</button>
+        <span id="counter"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="screen" id="result">
+    <div class="card result">
+      <div class="kicker" id="kicker">你 是</div>
+      <div class="big-emoji" id="r-emoji"></div>
+      <h2 id="r-name"></h2>
+      <div class="tags" id="r-tags"></div>
+      <div class="rarity" id="r-rarity"></div>
+      <div class="desc" id="r-desc"></div>
+      <div class="grid">
+        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>
+        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>
+      </div>
+      <div class="match" id="r-match"></div>
+      <div class="share">
+        <button class="btn" onclick="shareResult()">📤 分享结果</button>
+        <button class="btn ghost" onclick="restart()">🔄 再测一次</button>
+      </div>
+      <p class="hint" id="r-hint"></p>
+    </div>
+    <div class="footer">我也想做一个专属测试 · <a href="index.html">也做一个</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const QUIZ = {"slug": "cat", "title": "测测你是哪种小猫", "subtitle": "8 道题，2 分钟，测出你骨子里是哪只猫。凭直觉选，没有标准答案。", "emoji": "🐱", "est_minutes": 2, "share_hint": "把结果发给我，看看咱们是不是一对冤家猫。", "cta": "我也想做一个专属测试", "cta_url": "index.html", "axes": [{"key": "energy", "neg": "能躺着绝不坐着", "pos": "一睁眼就想跑酷"}, {"key": "social", "neg": "人类勿近，保持距离", "pos": "人类是我的专属暖炉"}, {"key": "order", "neg": "随缘，猫生苦短", "pos": "作息规律，饭点精确到分"}], "questions": [{"q": "周末突然空出一整个下午，你最想？", "options": [{"text": "出门暴走两万步，把电量用光", "scores": {"energy": 1}}, {"text": "看心情，可能出门也可能继续躺", "scores": {}}, {"text": "窝着不动，谁也别叫我", "scores": {"energy": -1}}]}, {"q": "一件任务卡了三小时，你会？", "options": [{"text": "硬刚到底，不搞定不吃饭", "scores": {"energy": 1}}, {"text": "先放着，换换脑子再回来", "scores": {}}, {"text": "直接摆烂，明天再说", "scores": {"energy": -1}}]}, {"q": "半夜突然醒了，你通常会？", "options": [{"text": "干脆起来做点事，越做越精神", "scores": {"energy": 1}}, {"text": "刷会儿手机，困了再睡", "scores": {}}, {"text": "翻个身继续睡，天塌了也明天再说", "scores": {"energy": -1}}]}, {"q": "朋友发消息说「晚上出来玩」，你？", "options": [{"text": "一秒答应，还要把其他人都叫上", "scores": {"social": 1}}, {"text": "先问问有谁、在哪，再看要不要去", "scores": {}}, {"text": "找个借口不去，只想一个人待着", "scores": {"social": -1}}]}, {"q": "群里在聊你特别感兴趣的话题，你？", "options": [{"text": "立刻加入，还能顺手开个语音", "scores": {"social": 1}}, {"text": "偶尔冒个泡，说两句就走", "scores": {}}, {"text": "默默看完，一个字不发", "scores": {"social": -1}}]}, {"q": "你的手机相册里，更多的是？", "options": [{"text": "和朋友的合照、聊天截图", "scores": {"social": 1}}, {"text": "风景、美食、猫猫狗狗，一半一半", "scores": {}}, {"text": "几乎没有人的照片", "scores": {"social": -1}}]}, {"q": "你的桌面和待办事项，通常是？", "options": [{"text": "分类整理，按优先级排好", "scores": {"order": 1}}, {"text": "大概分一下，乱中有序", "scores": {}}, {"text": "东西堆着，要用的时候再翻", "scores": {"order": -1}}]}, {"q": "出门前，你一般？", "options": [{"text": "提前查好路线、带齐东西", "scores": {"order": 1}}, {"text": "大致想一下，缺什么路上买", "scores": {}}, {"text": "临时抓上手机就走", "scores": {"order": -1}}]}], "results": {"000": {"name": "橘猫 · 摆烂大师", "emoji": "🐈", "tags": ["躺平", "高冷", "随缘"], "desc": "你的人生信条是：能躺着绝不坐着，能不动绝不动。别人在卷，你在晒太阳。你看起来对什么都无所谓，其实只是把有限的精力留给真正重要的事——比如下一顿吃什么。", "strength": "情绪稳定得像个老僧，天塌下来先睡一觉，醒来再说。", "weak": "行动力全靠最后一刻的 deadline 驱动，偶尔会错过一些好东西。", "match": "跟「班长猫」最互补，一个负责启动，一个负责想开。"}, "001": {"name": "布偶 · 老干部", "emoji": "😼", "tags": ["规律", "边界感", "慢热"], "desc": "你的猫生有一套完整的时间表：几点吃饭、几点巡视、几点睡觉，雷打不动。你对陌生距离感很强，但一旦把你划进「自己人」，你会极其靠谱。你嘴上不说，心里都记着。", "strength": "靠谱到可以让人类放心出差三天，家里一切按计划运转。", "weak": "计划被打破时，你会默默不爽一整个下午。", "match": "跟「社牛精」在一起，你能被拽出舒适区。"}, "010": {"name": "奶牛猫 · 贴贴怪", "emoji": "🐱", "tags": ["黏人", "懒散", "嘴甜"], "desc": "你最擅长的事是：用一声软乎乎的喵，换取人类的腿、沙发和零食。你没什么宏大目标，但你知道怎么让自己舒服，也知道怎么让身边人愿意照顾你。", "strength": "亲和力拉满，走到哪都有人愿意给你留个位置。", "weak": "独处能力约等于零，人类一出门你就开始拆家。", "match": "跟「野孩子」相反，一个往外冲，一个往怀里钻。"}, "011": {"name": "英短 · 精致管家", "emoji": "🐈‍⬛", "tags": ["精致", "黏人", "有序"], "desc": "你的猫窝永远铺得整整齐齐，饭盆要摆在固定位置，连人类的作息你都想管。你看起来高冷，其实特别在意别人有没好好照顾自己。你是那种会把生活过成样板间的人。", "strength": "细节控，交给你的事基本不会出错，还顺手美化一遍。", "weak": "标准太高，容易替别人操心到心累。", "match": "跟「摆烂大师」是绝配，你管着，他躺平，谁也不嫌谁。"}, "100": {"name": "狸花 · 野孩子", "emoji": "🐅", "tags": ["好动", "好奇", "独行"], "desc": "你天生带着一股野劲：好奇心比饭量大，敢往没去过的地方钻。你不太需要人陪，但需要足够的空间。被关太久会烦躁，放出去又能把自己照顾得很好。", "strength": "适应力强，换个环境也能很快找到自己的路线。", "weak": "不太会提前打招呼，经常急得旁边人到处找你。", "match": "跟「精致管家」互补，你负责闯，TA 负责收尾。"}, "101": {"name": "美短 · 自律教练", "emoji": "🐆", "tags": ["自律", "好动", "有计划"], "desc": "你是猫界的健身博主：早上跑酷，白天巡视，晚上复盘。你对自己有要求，也看不惯人类瘫在沙发上。你把「玩」也当成一件需要认真对待的事。", "strength": "执行力强，想到就做，而且做得有模有样。", "weak": "偶尔太紧绷，忘了猫生也可以浪费时间。", "match": "跟「贴贴怪」互相治愈，一个拉练，一个撒娇。"}, "110": {"name": "暹罗 · 社牛精", "emoji": "😸", "tags": ["社牛", "热闹", "没心没肺"], "desc": "你走到哪里都是主角：跟客人聊天，跟别的猫交朋友，连扫地机器人都能处成哥们。你的能量来自人群，安静太久你会憋坏。虽然有点吵，但没人讨厌你。", "strength": "社交天赋拉满，能迅速把陌生场合变成自己的主场。", "weak": "情绪来得快去得也快，容易说错话又忘记道歉。", "match": "跟「老干部」互补，你带节奏，TA 兜底。"}, "111": {"name": "缅因 · 班长大人", "emoji": "🦁", "tags": ["全能", "靠谱", "有担当"], "desc": "你是家里的主心骨：规律、爱社交、还精力旺盛。人类不在的时候你负责看家，人在的时候你负责活跃气氛。你看起来凶，其实心最软，是那种会照顾所有人的大猫。", "strength": "责任心强，交给你的事会办到超出预期。", "weak": "什么都想管，容易把自己累坏，还不好意思说。", "match": "跟「野孩子」互补，你稳住局面，TA 带来新鲜感。"}}, "thresholds": {"energy": 0, "social": 0, "order": 0}, "rarity": {"000": 14.9, "001": 11.9, "010": 13.9, "011": 11.1, "100": 13.9, "101": 11.1, "110": 12.9, "111": 10.3}};
+const AXES = QUIZ.axes.map(a => a.key);
+const RESULTS = QUIZ.results;
+let index = 0, scores = {}, answers = [], lastDelta = {};
+function resetScores(){ scores = {}; lastDelta = {}; AXES.forEach(k => { scores[k] = 0; lastDelta[k] = 0; }); }
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+function startQuiz(){ resetScores(); answers = []; index = 0; renderQuestion(); show('quiz'); }
+function addScores(option){
+  const s = option.scores || {};
+  for (const k in s){
+    const v = s[k];
+    scores[k] = (scores[k]||0) + v;
+    if (v) lastDelta[k] = v;
+  }
+}
+function renderQuestion(){
+  const q = QUIZ.questions[index];
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+  document.getElementById('counter').textContent = (index+1) + ' / ' + QUIZ.questions.length;
+  document.getElementById('qtext').textContent = q.q;
+  const box = document.getElementById('options'); box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">' + 'ABC'[i] + '</span><span></span>';
+    btn.lastChild.textContent = opt.text;
+    btn.onclick = () => choose(i);
+    box.appendChild(btn);
+  });
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+}
+function choose(i){
+  const opt = QUIZ.questions[index].options[i];
+  resetFromAnswers(index);
+  answers[index] = i; addScores(opt); index++;
+  if (index < QUIZ.questions.length) { renderQuestion(); }
+  else { document.getElementById('bar').style.width = '100%'; renderResult(); }
+}
+function resetFromAnswers(upto){
+  resetScores();
+  for (let i = 0; i < upto; i++){ addScores(QUIZ.questions[i].options[answers[i]]); }
+}
+function prev(){
+  if (index === 0) return;
+  index--; resetFromAnswers(index); renderQuestion();
+}
+function resultKey(){
+  const T = QUIZ.thresholds || {};
+  return AXES.map(k => {
+    const v = scores[k];
+    const t = (typeof T[k] === 'number') ? T[k] : -0.5;
+    if (v > t) return '1';
+    if (v === t && (lastDelta[k] || 0) > 0) return '1';
+    return '0';
+  }).join('');
+}
+function renderResult(forcedKey){
+  const key = forcedKey || resultKey();
+  const r = RESULTS[key] || RESULTS[Object.keys(RESULTS)[0]];
+  document.getElementById('r-emoji').textContent = r.emoji;
+  document.getElementById('r-name').textContent = r.name;
+  document.getElementById('r-desc').textContent = r.desc;
+  document.getElementById('r-strength').textContent = r.strength;
+  document.getElementById('r-weak').textContent = r.weak;
+  document.getElementById('r-match').textContent = '💞 合拍类型：' + r.match;
+  document.getElementById('r-tags').innerHTML = '';
+  (r.tags || []).forEach(t => { const s = document.createElement('span'); s.className='tag'; s.textContent=t; document.getElementById('r-tags').appendChild(s); });
+  const rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;
+  if (rare) {
+    const label = rare < 6 ? '隐藏款' : rare < 10 ? '稀有' : rare < 15 ? '少见' : '常见';
+    document.getElementById('r-rarity').textContent = '稀有度 ' + label + ' · 只有 ' + rare + '% 的人会测到';
+  } else { document.getElementById('r-rarity').textContent = ''; }
+  document.getElementById('r-hint').textContent = QUIZ.share_hint;
+  try { history.replaceState(null, '', '#r=' + key); } catch(e) {}
+  show('result');
+}
+function restart(){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+  resetScores(); answers = []; index = 0; show('cover'); }
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+function shareResult(){
+  const key = resultKey();
+  const url = location.origin + location.pathname + location.search + '#r=' + key;
+  const text = '我测出来是「' + document.getElementById('r-name').textContent + '」，你也来测测？';
+  if (navigator.share) { navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('链接已复制，去粘贴给朋友吧'); } catch(e) { toast(url); }
+    document.body.removeChild(ta); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('链接已复制，去粘贴给朋友吧')).catch(fallback);
+  } else { fallback(); }
+}
+(function deepLink(){
+  const m = (location.hash || '').match(/^#r=([01]{3})$/);
+  if (m && RESULTS[m[1]]) {
+    document.getElementById('kicker').textContent = 'TA 是';
+    renderResult(m[1]);
+    document.getElementById('kicker').textContent = 'TA 是';
+  }
+})();
+</script>
+</body>
+</html>

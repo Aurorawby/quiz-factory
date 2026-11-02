@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiz Factory · 做我的测试（AI 生成器）</title>
+<meta name="description" content="输入一句话主题，AI 在浏览器里帮你生成一个可分享的人格测试：出题、算分布、渲染成单文件 HTML。">
+<style>
+  :root{
+    --accent:#7c3aed; --accent-soft:#f0e4ff;
+    --ink:#1f1b16; --muted:#7a7268; --card:#fff; --bg:#f7f2ea;
+    --ok:#0e9f6e; --ok-soft:#e3f7ef; --warn:#b45309; --warn-soft:#fff4dd;
+    --radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #ffe8dc, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:680px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px 22px;margin-bottom:16px}
+  h1{font-size:26px;line-height:1.3;margin:0 0 8px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.7;margin:0 0 20px}
+  label{display:block;font-size:13px;font-weight:700;color:#5c554b;margin:14px 0 6px;letter-spacing:.5px}
+  input[type=text],input[type=password],select,textarea{
+    width:100%;border:1.5px solid #eee2d2;border-radius:12px;padding:12px 14px;font-size:15px;
+    color:var(--ink);background:#fff;font-family:inherit
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:6px;line-height:1.6}
+  .btn{
+    display:block;width:100%;border:0;border-radius:999px;padding:15px 20px;font-size:16px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(124,58,237,.25);
+    transition:transform .15s ease,opacity .15s ease;margin-top:18px
+  }
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}
+  .hidden{display:none!important}
+  .stage{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px dashed #eee2d2;font-size:14px;line-height:1.6}
+  .stage:last-child{border-bottom:0}
+  .stage .dot{flex:0 0 10px;height:10px;border-radius:50%;background:#ddd2c2;margin-top:7px}
+  .stage.running .dot{background:var(--accent);animation:pulse 1s infinite}
+  .stage.done .dot{background:var(--ok)}
+  .stage.fail .dot{background:#d9534f}
+  @keyframes pulse{50%{opacity:.35}}
+  .stage .name{font-weight:700;min-width:64px}
+  .stage .msg{color:var(--muted)}
+  .banner{border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.7;margin-bottom:14px}
+  .banner.ok{background:var(--ok-soft);color:#0b6b4a}
+  .banner.warn{background:var(--warn-soft);color:var(--warn)}
+  .banner.err{background:#fdeaea;color:#a33}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  td,th{padding:7px 6px;border-bottom:1px solid #f0e8dc;text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  .bar{height:8px;background:#f0e8dc;border-radius:999px;overflow:hidden;min-width:80px}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:999px}
+  .rarity-cell{display:flex;align-items:center;gap:8px}
+  iframe{width:100%;height:560px;border:1.5px solid #eee2d2;border-radius:14px;background:#fff}
+  .report{font-size:13px;color:var(--muted);line-height:1.8}
+  .report b{color:var(--ink)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:14px;line-height:1.8}
+  .footer a{color:#8a5a1f;text-decoration:none}
+  @media (max-width:460px){ .row{grid-template-columns:1fr} h1{font-size:22px} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 表单 -->
+  <div class="card" id="form-card">
+    <h1>✨ 做我的测试</h1>
+    <p class="sub">输入一句话主题，AI 在<b>你的浏览器里</b>跑完三段式生成（骨架 → 题目 → 文案），
+    每段过质量门禁、自动校准分布，最后产出一个可分享的单文件测试网页。</p>
+
+    <label>测试主题</label>
+    <input type="text" id="theme" placeholder="例如：测测你是哪种打工人" maxlength="30">
+
+    <div class="row">
+      <div>
+        <label>题目数量</label>
+        <select id="count">
+          <option value="6">6 道</option><option value="7">7 道</option>
+          <option value="8" selected>8 道</option><option value="9">9 道</option>
+          <option value="10">10 道</option>
+        </select>
+      </div>
+      <div>
+        <label>AI 服务商</label>
+        <select id="provider"></select>
+      </div>
+    </div>
+
+    <div id="custom-box" class="hidden">
+      <div class="row">
+        <div>
+          <label>服务地址（OpenAI 兼容）</label>
+          <input type="text" id="custom-base" placeholder="https://xxx/v1">
+        </div>
+        <div>
+          <label>模型名</label>
+          <input type="text" id="custom-model" placeholder="gpt-4o-mini">
+        </div>
+      </div>
+    </div>
+
+    <div id="key-box">
+      <label>API Key</label>
+      <input type="password" id="apikey" placeholder="粘贴你的 key，只存本机浏览器">
+      <p class="hint">🔑 Key 只保存在你这台电脑的 localStorage，页面直连服务商，<b>不经过任何其他服务器</b>。
+      智谱 GLM-4-Flash 免费，适合先用起来。</p>
+    </div>
+
+    <button class="btn" id="go">🪄 生成我的测试</button>
+    <button class="btn ghost" id="demo">🎬 演示模式（不用 Key，看完整流程）</button>
+    <p class="hint" id="form-err" style="color:#a33"></p>
+  </div>
+
+  <!-- 进度 -->
+  <div class="card hidden" id="progress-card">
+    <h1 style="font-size:20px">正在生成…</h1>
+    <div id="stages"></div>
+    <p class="hint">每段生成后过质量门禁（类型名重复 / emoji 乱拼 / 占位符残留 / 轴分布失衡），
+    不合格会带着问题清单让模型重试，最多 3 次。</p>
+    <div id="run-err" class="banner err hidden"></div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="card hidden" id="result-card">
+    <h1 style="font-size:20px">🎉 你的测试做好了</h1>
+    <div id="polish-banner"></div>
+    <label>门禁报告</label>
+    <div class="report" id="report"></div>
+    <label>结果分布（穷举全部作答组合算出）</label>
+    <table id="dist"></table>
+    <label>在线预览（可答题）</label>
+    <iframe id="preview" title="测试预览"></iframe>
+    <div class="grid2" style="margin-top:14px">
+      <button class="btn" id="download">⬇️ 下载测试 HTML</button>
+      <button class="btn ghost" id="again">🔄 再做一个</button>
+    </div>
+    <p class="hint">下载后就是独立单文件：发给朋友、微信里点开、挂 GitHub Pages 都行。
+    AI 文案建议人工读一遍再发。</p>
+  </div>
+
+  <div class="footer">
+    <a href="index.html">← 返回测试库</a><br>
+    Quiz Factory · 生成在本地浏览器完成 · Key 与内容不经任何中间服务器
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+ * Quiz Factory 网页版生成器
+ * 与 Python 管线 (generate.py/model.py/render.py) 同一套规则：
+ *   三段式生成（骨架→题目→文案）→ 每段门禁重试 → 校准阈值 → 穷举分布 → 渲染单文件 HTML
+ * ================================================================ */
+
+/* ---------------- 服务商 ---------------- */
+var PROVIDERS = {
+  zhipu:    {name:'智谱 GLM（GLM-4-Flash 免费）', base:'https://open.bigmodel.cn/api/paas/v4', model:'glm-4-flash', needKey:true},
+  deepseek: {name:'DeepSeek',                    base:'https://api.deepseek.com',             model:'deepseek-chat', needKey:true},
+  moonshot: {name:'Moonshot Kimi',               base:'https://api.moonshot.cn/v1',           model:'moonshot-v1-8k', needKey:true},
+  ollama:   {name:'Ollama 本地（免费，需已启动）', base:'http://127.0.0.1:11434/v1',            model:'qwen2.5:7b', needKey:false},
+  custom:   {name:'自定义（OpenAI 兼容接口）',     base:'',                                     model:'', needKey:true}
+};
+
+var $ = function(id){ return document.getElementById(id); };
+var els = {
+  theme:$('theme'), count:$('count'), provider:$('provider'),
+  keyBox:$('key-box'), apikey:$('apikey'), customBox:$('custom-box'),
+  customBase:$('custom-base'), customModel:$('custom-model'),
+  go:$('go'), demo:$('demo'), formErr:$('form-err'),
+  progressCard:$('progress-card'), stages:$('stages'), runErr:$('run-err'),
+  resultCard:$('result-card'), polishBanner:$('polish-banner'),
+  report:$('report'), dist:$('dist'), preview:$('preview'),
+  download:$('download'), again:$('again')
+};
+
+Object.keys(PROVIDERS).forEach(function(pid){
+  var opt = document.createElement('option');
+  opt.value = pid; opt.textContent = PROVIDERS[pid].name;
+  els.provider.appendChild(opt);
+});
+
+function restoreProvider(){
+  var saved = localStorage.getItem('qf_provider');
+  if (saved && PROVIDERS[saved]) els.provider.value = saved;
+  syncProviderUI();
+}
+function syncProviderUI(){
+  var pid = els.provider.value, p = PROVIDERS[pid];
+  localStorage.setItem('qf_provider', pid);
+  els.keyBox.classList.toggle('hidden', !p.needKey);
+  els.customBox.classList.toggle('hidden', pid !== 'custom');
+  if (p.needKey) els.apikey.value = localStorage.getItem('qf_key_' + pid) || '';
+}
+els.provider.addEventListener('change', syncProviderUI);
+els.apikey.addEventListener('input', function(){
+  localStorage.setItem('qf_key_' + els.provider.value, els.apikey.value.trim());
+});
+restoreProvider();
+
+/* ---------------- 提示词（与 generate.py 同一套） ---------------- */
+var SYSTEM = '你是资深互动内容策划，擅长设计「测测你是哪种 X」这类轻量人格测试。'
+  + '你只输出一个 JSON 对象，不写解释、不用 Markdown 代码块。';
+
+function skeletonPrompt(theme, short){
+  return '请为一个测试设计「骨架」，主题：' + theme + '\n\n'
+  + '只做三件事，**不要写题目、不要写结果描述文案**：\n'
+  + '1. title：给测试起个标题（默认「测测你是哪种' + short + '」，可以更有梗）；\n'
+  + '2. axes：恰好 3 条二元倾向轴。key 用英文小写（如 energy / social / order），\n'
+  + '   neg / pos 各写一句 6-12 字的**中性**口语描述（不要价值判断，两边都要像普通人）；\n'
+  + '3. results：恰好 8 个结果类型，key 依次为 000/001/010/011/100/101/110/111。\n'
+  + '   每个结果只有：name（两两不同、贴合主题）、emoji（**单个** emoji）、tags（3 个短词）。\n\n'
+  + '只输出 JSON：\n'
+  + '{"title":"...","emoji":"🎯","subtitle":"一句话引导语（不要写题目数量和时长，系统会自动补）",'
+  + '"share_hint":"一句让用户分享结果的话",'
+  + '"axes":[{"key":"energy","neg":"...","pos":"..."}, 共3条],'
+  + '"results":{"000":{"name":"...","emoji":"🐈","tags":["...","...","..."]}, 共8个}}';
+}
+
+function questionsPrompt(theme, axes, count){
+  var axesText = axes.map(function(a){ return '- ' + a.key + '：负向「' + a.neg + '」←→ 正向「' + a.pos + '」'; }).join('\n');
+  return '测试主题：' + theme + '\n测试的 3 条轴（考生在这三条倾向上的选择决定结果）：\n' + axesText + '\n\n'
+  + '请设计恰好 ' + count + ' 道**具体生活场景题**（不要"你是否…"这种是非题），要求：\n'
+  + '1. 每题恰好 3 个选项，每个选项像一句真实的人话（12-25 字，有画面感）；\n'
+  + '2. 每个选项**只给 1 条轴打 ±1**（scores 里只能出现一个轴，值 -1 或 1）；\n'
+  + '3. 平衡：每条轴在全卷至少出现 3 次 +1、3 次 -1；同一题的 3 个选项尽量落在不同轴上；\n'
+  + '4. 题目之间不要重复同一个场景套路。\n\n'
+  + '只输出 JSON：\n'
+  + '{"questions":[{"q":"〈场景题〉","options":[{"text":"〈选项A〉","scores":{"energy":-1}},'
+  + '{"text":"〈选项B〉","scores":{"social":1}},{"text":"〈选项C〉","scores":{"order":-1}}]},...]}';
+}
+
+function copyPrompt(theme, axes, names){
+  var axesText = axes.map(function(a){ return '- ' + a.key + '：负向「' + a.neg + '」←→ 正向「' + a.pos + '」'; }).join('\n');
+  var resultsText = Object.keys(names).map(function(k){ return '- ' + k + '：' + names[k]; }).join('\n');
+  return '测试主题：' + theme + '\n3 条轴：\n' + axesText + '\n8 个结果类型（key 是三条轴的二进制组合）：\n' + resultsText + '\n\n'
+  + '请为每个结果逐条写文案，要求：\n'
+  + '1. desc：60-90 字，第二人称「你」，有画面感，贴合这个类型的名字和主题；\n'
+  + '2. strength：一句「高光」（这个类型最闪的点）；\n'
+  + '3. weak：一句「小毛病」，要善意，不贬低人；\n'
+  + '4. match：合拍类型，**必须写另一个结果的具体名字**（不要写"同样的人"）；\n'
+  + '5. 8 条文案风格一致但内容不重复；不刻板印象、不冒犯、不出现真实品牌/明星。\n\n'
+  + '只输出 JSON：\n'
+  + '{"results":{"000":{"desc":"...","strength":"...","weak":"...","match":"〈另一个结果名〉"}, 共8个}}';
+}
+
+/* ---------------- JSON 提取与解析 ---------------- */
+function extractJSON(text){
+  var t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+  var s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s === -1 || e === -1 || e <= s) throw new Error('输出里找不到 JSON 对象');
+  t = t.slice(s, e + 1);
+  try { return JSON.parse(t); }
+  catch (err) {
+    var fixed = t.replace(/,\s*([}\]])/g, '$1');
+    try { return JSON.parse(fixed); }
+    catch (e2) { throw new Error('JSON 解析失败：' + err.message); }
+  }
+}
+
+/* ---------------- 调用 LLM ---------------- */
+function currentCfg(){
+  var pid = els.provider.value, p = PROVIDERS[pid];
+  return {
+    pid: pid,
+    base: (pid === 'custom' ? els.customBase.value.trim() : p.base).replace(/\/+$/, ''),
+    model: pid === 'custom' ? els.customModel.value.trim() : p.model,
+    key: p.needKey ? (els.apikey.value.trim() || localStorage.getItem('qf_key_' + pid) || '') : ''
+  };
+}
+
+async function chat(cfg, user, temperature, maxTokens){
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, 180000);
+  var resp;
+  try {
+    resp = await fetch(cfg.base + '/chat/completions', {
+      method: 'POST',
+      headers: cfg.key ? {'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.key}
+                       : {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{role:'system', content:SYSTEM}, {role:'user', content:user}],
+        temperature: temperature, max_tokens: maxTokens
+      }),
+      signal: ctrl.signal
+    });
+  } catch (e) {
+    throw new Error('网络请求失败（可能是断网 / 跨域拦截 / 本地服务未启动）：' + e.message);
+  } finally { clearTimeout(timer); }
+  if (!resp.ok) {
+    var body = await resp.text().catch(function(){ return ''; });
+    var hint = resp.status === 401 ? '（API Key 无效）' : resp.status === 404 ? '（检查服务地址是否含 /v1）'
+             : resp.status === 429 ? '（额度不足或被限流）' : '';
+    throw new Error('服务返回 ' + resp.status + hint + ' ' + body.slice(0, 200));
+  }
+  var data = await resp.json();
+  var text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if (!text) throw new Error('响应里没有文本内容');
+  return text;
+}
+
+/* ---------------- 门禁校验（与 model.py / generate.py 同规则） ---------------- */
+var RESULT_KEYS = ['000','001','010','011','100','101','110','111'];
+
+function isSingleEmoji(text){
+  text = String(text || '').trim();
+  if (!text || text.length > 6) return false;
+  var bases = 0, chars = Array.from(text);
+  for (var i = 0; i < chars.length; i++) {
+    var cp = chars[i].codePointAt(0);
+    if (cp >= 0x1F000 || (cp >= 0x2600 && cp <= 0x27BF) || (cp >= 0x2B00 && cp <= 0x2BFF)) bases++;
+  }
+  if (!bases) return false;
+  if (text.indexOf('\u200D') !== -1) return bases <= 3;
+  return bases === 1;
+}
+
+function checkSkeleton(data){
+  var problems = [];
+  var axes = data.axes;
+  if (!Array.isArray(axes) || axes.length !== 3) return ['axes 必须是 3 条'];
+  var keys = axes.map(function(a){ return String(a.key || '').trim(); });
+  if (new Set(keys).size !== 3 || keys.indexOf('') !== -1) problems.push('轴 key 重复或为空');
+  axes.forEach(function(a){
+    ['neg','pos'].forEach(function(side){
+      if (!String(a[side] || '').trim()) problems.push('轴 ' + a.key + ' 的 ' + side + ' 描述为空');
+    });
+  });
+  var results = data.results;
+  if (!results || typeof results !== 'object') return problems.concat(['results 必须是 8 个（000-111）']);
+  var names = RESULT_KEYS.filter(function(k){ return results[k]; })
+                         .map(function(k){ return String((results[k] || {}).name || '').trim(); });
+  if (names.length !== 8 || new Set(names).size !== 8 || names.indexOf('') !== -1)
+    problems.push('8 个结果的 name 必须两两不同且非空');
+  RESULT_KEYS.forEach(function(k){
+    var item = results[k] || {};
+    if (!isSingleEmoji(item.emoji)) problems.push('结果 ' + k + ' 的 emoji 不是单个 emoji');
+    var tags = Array.isArray(item.tags) ? item.tags.filter(function(t){ return String(t).trim(); }) : [];
+    if (tags.length < 2) problems.push('结果 ' + k + ' 的 tags 至少 2 个');
+  });
+  if (!String(data.title || '').trim()) problems.push('缺少 title');
+  return problems;
+}
+
+function checkQuestions(axes, questions, count){
+  var problems = [];
+  var keys = axes.map(function(a){ return a.key; });
+  if (!Array.isArray(questions)) return ['questions 必须是数组'];
+  if (questions.length !== count) problems.push('题目数量应为 ' + count + '，实际 ' + questions.length);
+  var balance = {}; keys.forEach(function(k){ balance[k] = [0, 0]; });
+  questions.forEach(function(q, i){
+    var options = q.options || [];
+    if (options.length !== 3) { problems.push('第 ' + (i+1) + ' 题应有 3 个选项，实际 ' + options.length); return; }
+    options.forEach(function(opt){
+      if (!String(opt.text || '').trim()) problems.push('第 ' + (i+1) + ' 题有空选项');
+      var sc = opt.scores || {}, ks = Object.keys(sc);
+      if (ks.length > 1) problems.push('第 ' + (i+1) + ' 题的选项给多条轴打了分，只能打 1 条');
+      ks.forEach(function(k){
+        if (keys.indexOf(k) === -1) problems.push('第 ' + (i+1) + ' 题用了未知轴 ' + k);
+        else if (Number(sc[k]) > 0) balance[k][0]++;
+        else if (Number(sc[k]) < 0) balance[k][1]++;
+      });
+    });
+  });
+  Object.keys(balance).forEach(function(k){
+    var plus = balance[k][0], minus = balance[k][1];
+    if (Math.min(plus, minus) < 3 || Math.abs(plus - minus) > 4)
+      problems.push('轴 ' + k + ' 的 +1/-1 失衡（+' + plus + '/-' + minus + '），每侧至少 3 次');
+  });
+  return problems;
+}
+
+function checkCopy(names, copy){
+  var problems = [];
+  var allNames = Object.keys(names).map(function(k){ return names[k]; });
+  RESULT_KEYS.forEach(function(k){
+    var item = copy[k] || {};
+    ['desc','strength','weak'].forEach(function(f){
+      var text = String(item[f] || '').trim();
+      if (!text) problems.push('结果 ' + k + ' 缺少 ' + f);
+      else if (text.indexOf('〈') !== -1 || text.indexOf('〉') !== -1 || text.toLowerCase().indexOf('xxx') !== -1)
+        problems.push('结果 ' + k + ' 的 ' + f + ' 残留模板占位符');
+    });
+    var match = String(item.match || '').trim();
+    if (!match) problems.push('结果 ' + k + ' 缺少 match');
+    else {
+      var ok = allNames.some(function(n){ return n !== names[k] && match.indexOf(n) !== -1; });
+      if (!ok) problems.push('结果 ' + k + ' 的 match 必须写另一个结果的具体名字');
+    }
+  });
+  return problems;
+}
+
+/* ---------------- 校准与分布（与 model.py 同算法） ---------------- */
+function allScores(quiz){
+  var axes = quiz.axes.map(function(a){ return a.key; });
+  var qs = quiz.questions, n = qs.length, out = [], total = Math.pow(3, n);
+  for (var i = 0; i < total; i++) {
+    var x = i, choices = [];
+    for (var q = 0; q < n; q++) { choices.push(x % 3); x = Math.floor(x / 3); }
+    var scores = {}, lastDelta = {};
+    axes.forEach(function(k){ scores[k] = 0; lastDelta[k] = 0; });
+    for (var j = 0; j < n; j++) {
+      var sc = qs[j].options[choices[j]].scores || {};
+      for (var k in sc) {
+        if (k in scores) { var v = Number(sc[k]); scores[k] += v; if (v) lastDelta[k] = v; }
+      }
+    }
+    out.push({scores: scores, lastDelta: lastDelta});
+  }
+  return out;
+}
+
+function calibrate(quiz){
+  var axes = quiz.axes.map(function(a){ return a.key; });
+  var combos = allScores(quiz), total = combos.length;
+  var thresholds = {};
+  axes.forEach(function(axis){
+    var vals = Array.from(new Set(combos.map(function(c){ return c.scores[axis]; }))).sort(function(a, b){ return a - b; });
+    var candidates = vals.concat([vals[0] - 1, vals[vals.length - 1]]);
+    var best = 0, bestGap = total + 1;
+    candidates.forEach(function(t){
+      var ones = 0;
+      combos.forEach(function(c){
+        var s = c.scores[axis];
+        if (s > t) ones++;
+        else if (s === t && c.lastDelta[axis] > 0) ones++;
+      });
+      var gap = Math.abs(ones - total / 2);
+      if (gap < bestGap) { best = t; bestGap = gap; }
+    });
+    thresholds[axis] = best;
+  });
+  quiz.thresholds = thresholds;
+  return quiz;
+}
+
+function rarity(quiz){
+  var axes = quiz.axes.map(function(a){ return a.key; });
+  var T = quiz.thresholds || {};
+  var hits = {}; RESULT_KEYS.forEach(function(k){ if (quiz.results[k]) hits[k] = 0; });
+  var combos = allScores(quiz), total = combos.length;
+  combos.forEach(function(c){
+    var key = axes.map(function(a){
+      var s = c.scores[a], t = (typeof T[a] === 'number') ? T[a] : -0.5;
+      if (s > t) return '1';
+      if (s === t && c.lastDelta[a] > 0) return '1';
+      return '0';
+    }).join('');
+    if (key in hits) hits[key]++;
+  });
+  var out = {};
+  Object.keys(hits).forEach(function(k){ out[k] = Math.round(hits[k] / total * 1000) / 10; });
+  return out;
+}
+
+function finalProblems(quiz){
+  var problems = [];
+  if (quiz.axes.length !== 3) problems.push('轴数量应为 3');
+  if (quiz.questions.length < 6 || quiz.questions.length > 10) problems.push('题目数量应在 6-10');
+  quiz.questions.forEach(function(q, i){
+    if ((q.options || []).length !== 3) problems.push('第 ' + (i+1) + ' 题应有 3 个选项');
+  });
+  var names = RESULT_KEYS.map(function(k){ return (quiz.results[k] || {}).name || ''; });
+  if (new Set(names).size !== 8) problems.push('8 个结果的名称有重复');
+  RESULT_KEYS.forEach(function(k){
+    var r = quiz.results[k] || {};
+    ['name','emoji','desc','strength','weak','match'].forEach(function(f){
+      if (!r[f]) problems.push('结果 ' + k + ' 缺少 ' + f);
+    });
+    if (!isSingleEmoji(r.emoji)) problems.push('结果 ' + k + ' 的 emoji 不是单个 emoji');
+  });
+  var shares = rarity(quiz), worst = null, rarest = null;
+  Object.keys(shares).forEach(function(k){
+    if (!worst || shares[k] > shares[worst]) worst = k;
+    if (!rarest || shares[k] < shares[rarest]) rarest = k;
+  });
+  if (worst && shares[worst] > 22) problems.push('结果 ' + worst + '（' + quiz.results[worst].name + '）占比 ' + shares[worst] + '% 过高');
+  if (rarest && shares[rarest] < 2) problems.push('结果 ' + rarest + ' 几乎测不到（' + shares[rarest] + '%）');
+  return problems;
+}
+
+/* ---------------- 组装 ---------------- */
+function assemble(skeleton, questions, copy, slug, count){
+  var rawResults = {};
+  RESULT_KEYS.forEach(function(k){
+    var base = skeleton.results[k] || {};
+    var c = (copy.results || {})[k] || {};
+    rawResults[k] = {
+      name: base.name || ('类型 ' + k),
+      emoji: base.emoji || '✨',
+      tags: Array.isArray(base.tags) ? base.tags.slice(0, 4) : ['神秘', '有趣'],
+      desc: c.desc || base.name || '这个类型有自己的节奏。',
+      strength: c.strength || '这个类型有它自己的节奏。',
+      weak: c.weak || '偶尔会有点小纠结。',
+      match: c.match || '互补的类型最合拍。'
+    };
+  });
+  var subtitle = String(skeleton.subtitle || '').trim();
+  if (!subtitle || /\d/.test(subtitle))
+    subtitle = count + ' 道题，2 分钟，看看你是哪一种';
+  return {
+    slug: slug,
+    title: String(skeleton.title || '测测你是哪一种').trim(),
+    subtitle: subtitle,
+    emoji: skeleton.emoji || '🎯',
+    est_minutes: 2,
+    share_hint: String(skeleton.share_hint || '').trim() || '快来看看我是哪一种，测完把你的结果发我',
+    cta: '我也想做一个专属测试',
+    cta_url: 'create.html',
+    axes: skeleton.axes,
+    questions: questions,
+    results: rawResults
+  };
+}
+
+/* ---------------- 单文件 HTML 渲染（与 render.py 同模板） ---------------- */
+var QUIZ_TEMPLATE = [ /* 模板与 render.py 保持一致 */
+'<!DOCTYPE html>',
+'<html lang="zh-CN">',
+'<head>',
+'<meta charset="utf-8">',
+'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+'<title>__TITLE__</title>',
+'<meta name="description" content="__SUBTITLE__">',
+'<style>',
+':root{--accent: __ACCENT__;--accent-soft: __ACCENT_SOFT__;--ink:#1f1b16; --muted:#7a7268; --card:#ffffff; --bg:#f7f2ea;--radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);}',
+'*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}',
+'html,body{margin:0;padding:0}',
+'body{background:radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),radial-gradient(900px 500px at 110% 10%, #ffe9c9, transparent 55%),var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom));}',
+'.app{width:100%;max-width:560px}',
+'.screen{display:none;animation:in .35s ease both}',
+'.screen.active{display:block}',
+'@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}',
+'.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}',
+'.cover{text-align:center;padding:40px 26px 32px}',
+'.cover .big-emoji{font-size:76px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.12))}',
+'h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:.5px}',
+'.subtitle{color:var(--muted);font-size:15px;line-height:1.7;margin:0 auto 22px;max-width:26em}',
+'.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}',
+'.chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}',
+'.btn{display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font-size:17px;font-weight:700;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.15);transition:transform .15s ease}',
+'.btn:active{transform:scale(.98)}',
+'.btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}',
+'.hint{color:var(--muted);font-size:12px;margin-top:14px}',
+'.progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}',
+'.progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}',
+'.meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:22px}',
+'.back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}',
+'.qtext{font-size:23px;line-height:1.5;font-weight:700;margin:6px 0 24px;letter-spacing:.3px}',
+'.options{display:flex;flex-direction:column;gap:12px}',
+'.option{display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;background:#fff;border:1.5px solid #eee2d2;border-radius:16px;padding:16px 18px;font-size:16.5px;color:var(--ink);line-height:1.5;transition:all .16s ease}',
+'.option:hover{border-color:var(--accent);transform:translateY(-1px)}',
+'.option:active{background:var(--accent-soft)}',
+'.option .letter{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}',
+'.result{text-align:center}',
+'.result .big-emoji{font-size:82px;line-height:1;margin:2px 0 6px}',
+'.result .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}',
+'.result h2{font-size:27px;margin:10px 0 12px}',
+'.tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}',
+'.tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}',
+'.rarity{color:var(--muted);font-size:12.5px;margin:0 0 18px;letter-spacing:.5px}',
+'.desc{color:#4b443b;font-size:15.5px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:18px;margin-bottom:14px}',
+'.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;text-align:left}',
+'.mini{background:#fbf7f1;border-radius:16px;padding:16px}',
+'.mini h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:1px}',
+'.mini p{margin:0;font-size:14px;line-height:1.65;color:#3f3a32}',
+'.match{background:#fff7ea;border:1px dashed #e8cfa8;border-radius:16px;padding:14px 16px;font-size:14px;color:#7a5622;text-align:left;margin-bottom:22px}',
+'.share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}',
+'.share .btn{padding:14px 12px;font-size:15px}',
+'.toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9}',
+'.toast.show{opacity:1;transform:translate(-50%,0)}',
+'.footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:18px}',
+'.footer a{color:#8a5a1f;text-decoration:none}',
+'@media (max-width:420px){ h1{font-size:26px} .qtext{font-size:20px} .cover{padding:32px 20px 26px} }',
+'<\/style>',
+'</head>',
+'<body>',
+'<div class="app">',
+'  <div class="screen active" id="cover">',
+'    <div class="card cover">',
+'      <div class="big-emoji">__EMOJI__</div>',
+'      <h1>__TITLE__</h1>',
+'      <p class="subtitle">__SUBTITLE__</p>',
+'      <div class="chips">',
+'        <span class="chip">📝 __QCOUNT__ 道题</span>',
+'        <span class="chip">⏱ 约 __MINUTES__ 分钟</span>',
+'        <span class="chip">🎭 __RCOUNT__ 种结果</span>',
+'      </div>',
+'      <button class="btn" onclick="startQuiz()">开始测试 →</button>',
+'      <p class="hint">凭直觉选，没有标准答案</p>',
+'    </div>',
+'    <div class="footer">由 <b>Quiz Factory</b> 生成 · 单文件离线可用</div>',
+'  </div>',
+'  <div class="screen" id="quiz">',
+'    <div class="card">',
+'      <div class="progress"><i id="bar"></i></div>',
+'      <div class="meta-row">',
+'        <button class="back" onclick="prev()">← 上一题</button>',
+'        <span id="counter"></span>',
+'      </div>',
+'      <div class="qtext" id="qtext"></div>',
+'      <div class="options" id="options"></div>',
+'    </div>',
+'  </div>',
+'  <div class="screen" id="result">',
+'    <div class="card result">',
+'      <div class="kicker" id="kicker">你 是</div>',
+'      <div class="big-emoji" id="r-emoji"></div>',
+'      <h2 id="r-name"></h2>',
+'      <div class="tags" id="r-tags"></div>',
+'      <div class="rarity" id="r-rarity"></div>',
+'      <div class="desc" id="r-desc"></div>',
+'      <div class="grid">',
+'        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>',
+'        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>',
+'      </div>',
+'      <div class="match" id="r-match"></div>',
+'      <div class="share">',
+'        <button class="btn" onclick="shareResult()">📤 分享结果</button>',
+'        <button class="btn ghost" onclick="restart()">🔄 再测一次</button>',
+'      </div>',
+'      <p class="hint" id="r-hint"></p>',
+'    </div>',
+'    <div class="footer">__CTA_TEXT__ · <a href="__CTA_URL__">也做一个</a></div>',
+'  </div>',
+'</div>',
+'<div class="toast" id="toast"></div>',
+'<script>',
+'const QUIZ = __QUIZ_JSON__;',
+'const AXES = QUIZ.axes.map(a => a.key);',
+'const RESULTS = QUIZ.results;',
+'let index = 0, scores = {}, answers = [], lastDelta = {};',
+'function resetScores(){ scores = {}; lastDelta = {}; AXES.forEach(k => { scores[k] = 0; lastDelta[k] = 0; }); }',
+'function show(id){ document.querySelectorAll(\'.screen\').forEach(s => s.classList.remove(\'active\'));',
+'  document.getElementById(id).classList.add(\'active\'); window.scrollTo({top:0,behavior:\'smooth\'}); }',
+'function startQuiz(){ resetScores(); answers = []; index = 0; renderQuestion(); show(\'quiz\'); }',
+'function addScores(option){',
+'  const s = option.scores || {};',
+'  for (const k in s){',
+'    const v = s[k];',
+'    scores[k] = (scores[k]||0) + v;',
+'    if (v) lastDelta[k] = v;',
+'  }',
+'}',
+'function renderQuestion(){',
+'  const q = QUIZ.questions[index];',
+'  document.getElementById(\'bar\').style.width = ((index) / QUIZ.questions.length * 100) + \'%\';',
+'  document.getElementById(\'counter\').textContent = (index+1) + \' / \' + QUIZ.questions.length;',
+'  document.getElementById(\'qtext\').textContent = q.q;',
+'  const box = document.getElementById(\'options\'); box.innerHTML = \'\';',
+'  q.options.forEach((opt, i) => {',
+'    const btn = document.createElement(\'button\');',
+'    btn.className = \'option\';',
+'    btn.innerHTML = \'<span class="letter">\' + \'ABC\'[i] + \'</span><span></span>\';',
+'    btn.lastChild.textContent = opt.text;',
+'    btn.onclick = () => choose(i);',
+'    box.appendChild(btn);',
+'  });',
+'  document.getElementById(\'bar\').style.width = ((index) / QUIZ.questions.length * 100) + \'%\';',
+'}',
+'function choose(i){',
+'  const opt = QUIZ.questions[index].options[i];',
+'  resetFromAnswers(index);',
+'  answers[index] = i; addScores(opt); index++;',
+'  if (index < QUIZ.questions.length) { renderQuestion(); }',
+'  else { document.getElementById(\'bar\').style.width = \'100%\'; renderResult(); }',
+'}',
+'function resetFromAnswers(upto){',
+'  resetScores();',
+'  for (let i = 0; i < upto; i++){ addScores(QUIZ.questions[i].options[answers[i]]); }',
+'}',
+'function prev(){',
+'  if (index === 0) return;',
+'  index--; resetFromAnswers(index); renderQuestion();',
+'}',
+'function resultKey(){',
+'  const T = QUIZ.thresholds || {};',
+'  return AXES.map(k => {',
+'    const v = scores[k];',
+'    const t = (typeof T[k] === \'number\') ? T[k] : -0.5;',
+'    if (v > t) return \'1\';',
+'    if (v === t && (lastDelta[k] || 0) > 0) return \'1\';',
+'    return \'0\';',
+'  }).join(\'\');',
+'}',
+'function renderResult(forcedKey){',
+'  const key = forcedKey || resultKey();',
+'  const r = RESULTS[key] || RESULTS[Object.keys(RESULTS)[0]];',
+'  document.getElementById(\'r-emoji\').textContent = r.emoji;',
+'  document.getElementById(\'r-name\').textContent = r.name;',
+'  document.getElementById(\'r-desc\').textContent = r.desc;',
+'  document.getElementById(\'r-strength\').textContent = r.strength;',
+'  document.getElementById(\'r-weak\').textContent = r.weak;',
+'  document.getElementById(\'r-match\').textContent = \'💞 合拍类型：\' + r.match;',
+'  document.getElementById(\'r-tags\').innerHTML = \'\';',
+'  (r.tags || []).forEach(t => { const s = document.createElement(\'span\'); s.className=\'tag\'; s.textContent=t; document.getElementById(\'r-tags\').appendChild(s); });',
+'  const rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;',
+'  if (rare) {',
+'    const label = rare < 6 ? \'隐藏款\' : rare < 10 ? \'稀有\' : rare < 15 ? \'少见\' : \'常见\';',
+'    document.getElementById(\'r-rarity\').textContent = \'稀有度 \' + label + \' · 只有 \' + rare + \'% 的人会测到\';',
+'  } else { document.getElementById(\'r-rarity\').textContent = \'\'; }',
+'  document.getElementById(\'r-hint\').textContent = QUIZ.share_hint;',
+'  try { history.replaceState(null, \'\', \'#r=\' + key); } catch(e) {}',
+'  show(\'result\');',
+'}',
+'function restart(){ try { history.replaceState(null, \'\', location.pathname + location.search); } catch(e) {}',
+'  resetScores(); answers = []; index = 0; show(\'cover\'); }',
+'function toast(msg){ const el = document.getElementById(\'toast\'); el.textContent = msg; el.classList.add(\'show\');',
+'  clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove(\'show\'), 1800); }',
+'function shareResult(){',
+'  const key = resultKey();',
+'  const url = location.origin + location.pathname + location.search + \'#r=\' + key;',
+'  const text = \'我测出来是「\' + document.getElementById(\'r-name\').textContent + \'」，你也来测测？\';',
+'  if (navigator.share) { navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }',
+'  const fallback = () => { const ta = document.createElement(\'textarea\'); ta.value = url; document.body.appendChild(ta); ta.select();',
+'    try { document.execCommand(\'copy\'); toast(\'链接已复制，去粘贴给朋友吧\'); } catch(e) { toast(url); }',
+'    document.body.removeChild(ta); };',
+'  if (navigator.clipboard && navigator.clipboard.writeText) {',
+'    navigator.clipboard.writeText(url).then(() => toast(\'链接已复制，去粘贴给朋友吧\')).catch(fallback);',
+'  } else { fallback(); }',
+'}',
+'(function deepLink(){',
+'  const m = (location.hash || \'\').match(/^#r=([01]{3})$/);',
+'  if (m && RESULTS[m[1]]) {',
+'    document.getElementById(\'kicker\').textContent = \'TA 是\';',
+'    renderResult(m[1]);',
+'    document.getElementById(\'kicker\').textContent = \'TA 是\';',
+'  }',
+'})();',
+'<\/script>',
+'</body>',
+'</html>'
+].join('\n');
+
+var ACCENTS = [['#ff7a45','#ffe8dc'],['#5b7cfa','#e4e9ff'],['#12a184','#dcf5ee'],['#b25cff','#f0e4ff'],['#e0457b','#ffe3ec'],['#d98600','#fff0cf']];
+
+function escapeHtml(text){
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildQuizHTML(quiz){
+  var accent = ACCENTS[Math.abs(quiz.slug.split('').reduce(function(a, c){ return a + c.charCodeAt(0); }, 0)) % ACCENTS.length];
+  var payload = JSON.stringify({
+    slug: quiz.slug, title: quiz.title, subtitle: quiz.subtitle, emoji: quiz.emoji,
+    est_minutes: quiz.est_minutes, share_hint: quiz.share_hint, cta: quiz.cta, cta_url: quiz.cta_url,
+    axes: quiz.axes, questions: quiz.questions, results: quiz.results,
+    thresholds: quiz.thresholds, rarity: quiz.rarity
+  }).replace(/<\//g, '<\\/');
+  return QUIZ_TEMPLATE
+    .replace(/__TITLE__/g, escapeHtml(quiz.title))
+    .replace(/__SUBTITLE__/g, escapeHtml(quiz.subtitle))
+    .replace(/__EMOJI__/g, quiz.emoji)
+    .replace(/__QCOUNT__/g, String(quiz.questions.length))
+    .replace(/__MINUTES__/g, '2')
+    .replace(/__RCOUNT__/g, String(Object.keys(quiz.results).length))
+    .replace(/__ACCENT__/g, accent[0])
+    .replace(/__ACCENT_SOFT__/g, accent[1])
+    .replace(/__CTA_TEXT__/g, escapeHtml(quiz.cta))
+    .replace(/__CTA_URL__/g, escapeHtml(quiz.cta_url))
+    .replace(/__QUIZ_JSON__/g, payload);
+}
+
+/* ---------------- 演示模式（不用 Key，走同一条管线） ---------------- */
+var DEMO = {
+  skeleton: {"title":"测测你是哪种打工人","emoji":"💼",
+    "subtitle":"测出你的打工魂，顺便对号入座。",
+    "share_hint":"测完把你的类型发到群里，看看谁是卷王。",
+    "axes":[
+      {"key":"energy","neg":"能坐着绝不站着","pos":"一睁眼就火力全开"},
+      {"key":"social","neg":"耳机一戴谁也不爱","pos":"工位就是我的茶话会"},
+      {"key":"order","neg":"deadline 前才有生产力","pos":"日历精确到每半小时"}],
+    "results":{
+      "000":{"name":"卷不动 · 摸鱼仙","emoji":"🐟","tags":["低耗能","随缘","快乐摸鱼"]},
+      "001":{"name":"火箭 · 突击手","emoji":"🚀","tags":["deadline 战神","爆发力","心跳写作"]},
+      "010":{"name":"团宠 · 气氛组","emoji":"🎉","tags":["社交天赋","团建魂","奶茶拼单发起人"]},
+      "011":{"name":"全勤 · 卷卷侠","emoji":"⚡","tags":["人形永动机","聚会核心","日程爆满"]},
+      "100":{"name":"独狼 · 深潜者","emoji":"🤿","tags":["深度专注","安静高产","降噪耳机常年在线"]},
+      "101":{"name":"自由 · 火焰鸟","emoji":"🔥","tags":["独来独往","关键时刻爆发","讨厌被安排"]},
+      "110":{"name":"老黄牛 · 定海针","emoji":"🗓","tags":["团队粘合剂","计划控","靠谱本谱"]},
+      "111":{"name":"六边形 · 战神","emoji":"🏆","tags":["能量拉满","人脉中心","日程表之神"]}}},
+  questions: {"questions":[
+    {"q":"周一早上九点，你的开机状态是？","options":[
+      {"text":"咖啡续命，先在工位上缓十五分钟","scores":{"energy":1}},
+      {"text":"打开歌单，安静地清一遍本周待办","scores":{"order":1}},
+      {"text":"已经在线上跟三个同事聊完早间同步了","scores":{"energy":-1}}]},
+    {"q":"一个不难但很琐碎的任务派下来，你会？","options":[
+      {"text":"先放着，等状态来了再一口气清掉","scores":{"energy":-1}},
+      {"text":"马上塞进日程表的某个空档","scores":{"order":1}},
+      {"text":"拉上顺路的同事边聊边做","scores":{"social":1}}]},
+    {"q":"周五下班前的你通常是？","options":[
+      {"text":"电量 1%，只想瘫着刷手机","scores":{"energy":-1}},
+      {"text":"把下周的坑提前填两个，安心过周末","scores":{"order":-1}},
+      {"text":"组织部门聚餐，气氛拉满","scores":{"energy":1}}]},
+    {"q":"午休时间你更接近？","options":[
+      {"text":"戴耳机刷剧，谁也别理我","scores":{"social":-1}},
+      {"text":"约同事散步，顺便八卦一下","scores":{"social":1}},
+      {"text":"边吃饭边把下午的会过一遍","scores":{"order":-1}}]},
+    {"q":"群里在激烈讨论团建去哪，你会？","options":[
+      {"text":"潜水，最后举手说都行","scores":{"social":-1}},
+      {"text":"疯狂发表情包，把三个方案聊成型","scores":{"social":1}},
+      {"text":"默默查好预算和请假流程发出来","scores":{"order":1}}]},
+    {"q":"新同事来第一天，你的动作是？","options":[
+      {"text":"主动带 TA 认识一圈人，午饭拼一桌","scores":{"social":1}},
+      {"text":"把新人避坑清单文档甩给 TA","scores":{"order":-1}},
+      {"text":"点个头，继续忙自己的","scores":{"social":-1}}]},
+    {"q":"手头项目要定里程碑，你会？","options":[
+      {"text":"倒排时间表，精确到每天交付什么","scores":{"order":1}},
+      {"text":"大概有个方向，走一步看一步","scores":{"order":-1}},
+      {"text":"拉着大家对齐一轮再定","scores":{"social":-1}}]},
+    {"q":"突然被告知下周要交一个大方案，你会？","options":[
+      {"text":"今晚就列大纲，按天拆任务","scores":{"order":1}},
+      {"text":"先慌十分钟，然后激发出小宇宙","scores":{"order":-1}},
+      {"text":"找人头脑风暴，越聊越兴奋","scores":{"energy":1}}]}
+  ]},
+  copy: {"results":{
+    "000":{"desc":"你信奉能量守恒：上班的每一分力气都要省着花。你不卷不抢，但摸鱼摸得心安理得，因为该你做的你从来没落下过。同事以为你在偷懒，其实你在给生活留白。","strength":"情绪稳定，从不内耗，是团队里最不容易崩的人。","weak":"机会来的时候，你可能因为「懒得动」而错过。","match":"跟「全勤 · 卷卷侠」互补：TA 冲锋，你提醒 TA 别烧坏。"},
+    "001":{"desc":"平时安静如鸡，deadline 一到就化身火箭。你习惯了在压力里点火起飞，最后一晚的输出顶别人一周。你享受那种肾上腺素飙升的心流，虽然代价是心跳和发际线。","strength":"爆发力惊人，越是极限状态越能打。","weak":"长期踩线飞行，翻车风险和心跳一样高。","match":"跟「老黄牛 · 定海针」互补：你点火，TA 给你备降落伞。"},
+    "010":{"desc":"你就是办公室的小太阳：拼奶茶有你，团建策划有你，新同事破冰还是你。你把人脉织成一张网，信息总是最先到你这里。有人觉得你话多，但没人否认有你在场大家更放松。","strength":"天然的团队粘合剂，跨部门的事到你这就顺了。","weak":"热闹过头，自己的活儿容易被挤到晚上。","match":"跟「独狼 · 深潜者」互补：你织网，TA 下潜，配合无间。"},
+    "011":{"desc":"你的日程表密度堪比春运：白天连轴开会，晚上还有聚会，周末还能爬个山。你享受被需要的感觉，能量仿佛永远充不完。你不是不知道累，只是停下来的那一刻会让你慌。","strength":"人脉和执行力双在线，想要什么资源都找得到人。","weak":"容易把自己排到过载，身体会先抗议。","match":"跟「卷不动 · 摸鱼仙」互补：你加油，TA 踩刹车。"},
+    "100":{"desc":"降噪耳机是你工位的结界。你不爱凑热闹，但产出稳定得吓人：一个下午能干完别人两天的活。你相信深度工作才是真生产力，会议能不开就不开。","strength":"专注力顶级，复杂问题到你手里会被安静地拆掉。","weak":"存在感偏低，功劳容易被更会说话的人拿走。","match":"跟「团宠 · 气氛组」互补：TA 替你社交，你替 TA 干活。"},
+    "101":{"desc":"你讨厌被安排：排期、座位、甚至团建路线。但别误会，你不是躺平，你是把火力攒着，只在真正在乎的事情上全功率输出。你的产出曲线很偏科，峰值很高。","strength":"内核稳定，不容易被环境带节奏，作品常常惊艳。","weak":"协作里偶尔显得格格不入，需要学会打配合。","match":"跟「老黄牛 · 定海针」互补：你管创造，TA 管交付。"},
+    "110":{"desc":"你是团队的定海神针：进度你有表，风险你有账，谁卡住了你都门儿清。你不一定最出风头，但项目离开你两周，大家就会开始想念你。你的靠谱是一种复利。","strength":"计划性和责任感极强，能把混乱拧成秩序。","weak":"太爱按计划走，面对突变容易先焦虑再行动。","match":"跟「火箭 · 突击手」互补：你铺轨，TA 火箭头。"},
+    "111":{"desc":"能量满格、人脉满格、日程表满格——你就是行走的六边形战士。别人还在权衡，你已经组好了局、排好了期、拉齐了人。你适合打硬仗，只是记得偶尔也给电池放个假。","strength":"把想法变成现实的速度惊人，天生带队体质。","weak":"节奏太猛，容易忽略队友的电量余额。","match":"跟「独狼 · 深潜者」互补：你带队冲锋，TA 深潜兜底。"}
+  }}
+};
+
+/* ---------------- 三段式管线 ---------------- */
+function stageEl(name){
+  var div = document.createElement('div');
+  div.className = 'stage';
+  div.innerHTML = '<div class="dot"></div><div><span class="name"></span> <span class="msg"></span></div>';
+  div.querySelector('.name').textContent = name;
+  els.stages.appendChild(div);
+  return div;
+}
+function setStage(el, msg, cls){
+  el.querySelector('.msg').textContent = msg;
+  el.className = 'stage' + (cls ? ' ' + cls : '');
+}
+
+async function runStage(el, cfg, user, check, temperature, maxTokens, report, stageName){
+  var attempts = [], data = null, problems = [];
+  for (var attempt = 0; attempt < 3; attempt++) {
+    setStage(el, '第 ' + (attempt + 1) + ' 次尝试…', 'running');
+    try {
+      var text = cfg.demo
+        ? await fakeChat(stageName, attempt)
+        : await chat(cfg, user, temperature, maxTokens);
+      data = extractJSON(text);
+    } catch (err) {
+      attempts.push({attempt: attempt + 1, ok: false, error: String(err.message)});
+      setStage(el, '调用失败：' + err.message, 'fail');
+      continue;
+    }
+    problems = check(data);
+    attempts.push({attempt: attempt + 1, ok: !problems.length, problems: problems});
+    if (!problems.length) { setStage(el, '✓ 通过门禁', 'done'); break; }
+    setStage(el, '门禁发现 ' + problems.length + ' 个问题，带反馈重试', 'fail');
+    user = user + '\n\n你上一版输出有以下问题，请修正后重新输出完整 JSON：\n- ' + problems.slice(0, 8).join('\n- ');
+  }
+  var last = attempts[attempts.length - 1];
+  report.stages.push({stage: stageName, tries: attempts.length, ok: !!(last && last.ok), attempts: attempts});
+  if (!data) throw new Error(stageName + ' 段三次尝试均失败，请检查服务商配置或换一个模型');
+  return data;
+}
+
+async function runQuiz(demo){
+  var theme = els.theme.value.trim();
+  if (!theme) { els.formErr.textContent = '先给测试起个主题吧，例如「测测你是哪种打工人」'; return; }
+  els.formErr.textContent = '';
+  var cfg = currentCfg();
+  if (!demo) {
+    if (!cfg.base || !cfg.model) { els.formErr.textContent = '请先填写服务地址和模型名'; return; }
+    if (PROVIDERS[cfg.pid].needKey && !cfg.key) { els.formErr.textContent = '请先粘贴 API Key（或试试演示模式）'; return; }
+  } else { cfg.demo = true; }
+  els.go.disabled = els.demo.disabled = true;
+  els.progressCard.classList.remove('hidden');
+  els.resultCard.classList.add('hidden');
+  els.runErr.classList.add('hidden');
+  els.stages.innerHTML = '';
+  window.scrollTo({top: els.progressCard.offsetTop - 10, behavior: 'smooth'});
+
+  var count = Number(els.count.value);
+  var slug = 'quiz-' + new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  var report = {stages: [], finalProblems: [], needsPolish: true, seconds: 0};
+  var t0 = performance.now();
+  try {
+    var short = theme.replace(/测测你是哪种|测测你是哪个/g, '').trim();
+    var sEl = stageEl('① 骨架'), qEl = stageEl('② 题目'), cEl = stageEl('③ 文案');
+    var skeleton = await runStage(sEl, cfg, skeletonPrompt(theme, short),
+      checkSkeleton, 0.7, 1400, report, 'skeleton');
+    var questionsData = await runStage(qEl, cfg, questionsPrompt(theme, skeleton.axes, count),
+      function(d){ return checkQuestions(skeleton.axes, d.questions || [], count); },
+      0.65, 2600, report, 'questions');
+    var names = {};
+    RESULT_KEYS.forEach(function(k){ names[k] = String((skeleton.results[k] || {}).name || ''); });
+    var copyData = await runStage(cEl, cfg, copyPrompt(theme, skeleton.axes, names),
+      function(d){ return checkCopy(names, d.results || {}); },
+      0.7, 2400, report, 'copy');
+
+    var quiz = assemble(skeleton, questionsData.questions || [], copyData, slug, count);
+    calibrate(quiz);
+    quiz.rarity = rarity(quiz);
+    report.finalProblems = finalProblems(quiz);
+    report.needsPolish = report.finalProblems.length > 0;
+    report.seconds = Math.round((performance.now() - t0) / 100) / 10;
+    report.theme = theme;
+    showResult(quiz, report);
+  } catch (err) {
+    els.runErr.textContent = '⛔ ' + err.message + (cfg.demo ? '' : '（可先试「演示模式」看流程，或换一个服务商）');
+    els.runErr.classList.remove('hidden');
+  } finally {
+    els.go.disabled = els.demo.disabled = false;
+  }
+}
+
+function fakeChat(stage){
+  return new Promise(function(resolve){
+    setTimeout(function(){ resolve(JSON.stringify(DEMO[stage])); }, 500 + Math.random() * 500);
+  });
+}
+
+/* ---------------- 结果展示 ---------------- */
+var LAST = null;
+
+function showResult(quiz, report){
+  LAST = {quiz: quiz, html: buildQuizHTML(quiz)};
+  els.report.innerHTML =
+    '主题：<b>' + escapeHtml(report.theme) + '</b> · 用时 <b>' + report.seconds + 's</b><br>' +
+    report.stages.map(function(s){
+      return '段「' + s.stage + '」：尝试 ' + s.tries + ' 次，' + (s.ok ? '✓ 通过门禁'
+        : '⚠ 带着问题通过（' + (s.attempts[s.attempts.length-1].problems || []).slice(0, 2).join('；') + '）');
+    }).join('<br>');
+  var distRows = Object.keys(quiz.rarity).map(function(k){
+    var r = quiz.results[k] || {};
+    var pct = quiz.rarity[k];
+    return '<tr><td><code>' + k + '</code></td><td>' + r.emoji + ' ' + escapeHtml(r.name) + '</td>' +
+      '<td class="rarity-cell"><div class="bar"><i style="width:' + Math.min(pct * 4, 100) + '%"></i></div>' + pct + '%</td></tr>';
+  }).join('');
+  els.dist.innerHTML = '<tr><th>key</th><th>结果</th><th style="width:45%">占比</th></tr>' + distRows;
+  els.polishBanner.className = 'banner ' + (report.needsPolish ? 'warn' : 'ok');
+  els.polishBanner.innerHTML = report.needsPolish
+    ? '⚠️ 门禁发现待润色问题：<b>' + escapeHtml(report.finalProblems.join('；')) + '</b>。结构已保证，文案建议人工过一遍再发布。'
+    : '✅ 门禁全绿：结构合法、8 种结果全部可达、分布均衡（' +
+      Math.min.apply(null, Object.values(quiz.rarity)) + '%-' +
+      Math.max.apply(null, Object.values(quiz.rarity)) + '%）。发布前仍建议把 8 条文案读一遍。';
+  els.preview.srcdoc = LAST.html;
+  els.progressCard.classList.add('hidden');
+  els.resultCard.classList.remove('hidden');
+  window.scrollTo({top: els.resultCard.offsetTop - 10, behavior: 'smooth'});
+}
+
+els.download.addEventListener('click', function(){
+  if (!LAST) return;
+  var blob = new Blob([LAST.html], {type: 'text/html;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = LAST.quiz.slug + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+});
+els.again.addEventListener('click', function(){
+  els.resultCard.classList.add('hidden');
+  els.progressCard.classList.add('hidden');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  els.theme.focus();
+});
+els.go.addEventListener('click', function(){ runQuiz(false); });
+els.demo.addEventListener('click', function(){ runQuiz(true); });
+</script>
+</body>
+</html>

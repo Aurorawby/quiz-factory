@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测测你是哪种文献阅读人格</title>
+<meta name="description" content="快速测出你的文献阅读习惯">
+<style>
+  :root{
+    --accent: #ff7a45;
+    --accent-soft: #ffe8dc;
+    --ink:#1f1b16; --muted:#7a7268; --card:#ffffff; --bg:#f7f2ea;
+    --radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #ffe9c9, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:560px}
+  .screen{display:none;animation:in .35s ease both}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+  .cover{text-align:center;padding:40px 26px 32px}
+  .cover .big-emoji{font-size:76px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.12))}
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:.5px}
+  .subtitle{color:var(--muted);font-size:15px;line-height:1.7;margin:0 auto 22px;max-width:26em}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .btn{
+    display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font-size:17px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,69,.28);
+    transition:transform .15s ease,box-shadow .15s ease
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}
+  .hint{color:var(--muted);font-size:12px;margin-top:14px}
+  /* 答题 */
+  .progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}
+  .meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:22px}
+  .back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}
+  .qtext{font-size:23px;line-height:1.5;font-weight:700;margin:6px 0 24px;letter-spacing:.3px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .option{
+    display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;
+    background:#fff;border:1.5px solid #eee2d2;border-radius:16px;padding:16px 18px;font-size:16.5px;
+    color:var(--ink);line-height:1.5;transition:all .16s ease
+  }
+  .option:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .option:active{background:var(--accent-soft)}
+  .option .letter{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center
+  }
+  /* 结果 */
+  .result{text-align:center}
+  .result .big-emoji{font-size:82px;line-height:1;margin:2px 0 6px}
+  .result .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}
+  .result h2{font-size:27px;margin:10px 0 12px}
+  .tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .rarity{color:var(--muted);font-size:12.5px;margin:0 0 18px;letter-spacing:.5px}
+  .desc{color:#4b443b;font-size:15.5px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:18px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;text-align:left}
+  .mini{background:#fbf7f1;border-radius:16px;padding:16px}
+  .mini h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:1px}
+  .mini p{margin:0;font-size:14px;line-height:1.65;color:#3f3a32}
+  .match{background:#fff7ea;border:1px dashed #e8cfa8;border-radius:16px;padding:14px 16px;font-size:14px;color:#7a5622;text-align:left;margin-bottom:22px}
+  .share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .share .btn{padding:14px 12px;font-size:15px}
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:18px}
+  .footer a{color:#8a5a1f;text-decoration:none}
+  @media (max-width:420px){ h1{font-size:26px} .qtext{font-size:20px} .cover{padding:32px 20px 26px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 封面 -->
+  <div class="screen active" id="cover">
+    <div class="card cover">
+      <div class="big-emoji">🎯</div>
+      <h1>测测你是哪种文献阅读人格</h1>
+      <p class="subtitle">快速测出你的文献阅读习惯</p>
+      <div class="chips">
+        <span class="chip">📝 8 道题</span>
+        <span class="chip">⏱ 约 2 分钟</span>
+        <span class="chip">🎭 8 种结果</span>
+      </div>
+      <button class="btn" onclick="startQuiz()">开始测试 →</button>
+      <p class="hint">凭直觉选，没有标准答案</p>
+    </div>
+    <div class="footer">由 <b>Quiz Factory</b> 生成 · 单文件离线可用</div>
+  </div>
+
+  <!-- 答题 -->
+  <div class="screen" id="quiz">
+    <div class="card">
+      <div class="progress"><i id="bar"></i></div>
+      <div class="meta-row">
+        <button class="back" onclick="prev()">← 上一题</button>
+        <span id="counter"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="screen" id="result">
+    <div class="card result">
+      <div class="kicker" id="kicker">你 是</div>
+      <div class="big-emoji" id="r-emoji"></div>
+      <h2 id="r-name"></h2>
+      <div class="tags" id="r-tags"></div>
+      <div class="rarity" id="r-rarity"></div>
+      <div class="desc" id="r-desc"></div>
+      <div class="grid">
+        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>
+        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>
+      </div>
+      <div class="match" id="r-match"></div>
+      <div class="share">
+        <button class="btn" onclick="shareResult()">📤 分享结果</button>
+        <button class="btn ghost" onclick="restart()">🔄 再测一次</button>
+      </div>
+      <p class="hint" id="r-hint"></p>
+    </div>
+    <div class="footer">我也想要一个专属测试 · <a href="#">也做一个</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const QUIZ = {"slug": "lit-reading", "title": "测测你是哪种文献阅读人格", "subtitle": "快速测出你的文献阅读习惯", "emoji": "🎯", "est_minutes": 2, "share_hint": "分享你的文献阅读人格，看看别人怎么猜", "axes": [{"key": "energy", "neg": "懒散型", "pos": "专注型"}, {"key": "social", "neg": "独立型", "pos": "交流型"}, {"key": "order", "neg": "随性型", "pos": "严谨型"}], "questions": [{"q": "深夜书桌前，那篇难啃的综述在等你：", "options": [{"text": "泡杯咖啡，今晚啃完它", "scores": {"energy": 1}}, {"text": "先收藏，周末再说", "scores": {}}, {"text": "先刷十分钟手机助眠", "scores": {"energy": -1}}]}, {"q": "一篇 30 页的论文递到你手上：", "options": [{"text": "先读摘要和结论，再决定精读还是略读", "scores": {"order": 1}}, {"text": "从头到尾通读一遍", "scores": {}}, {"text": "随手翻到哪页算哪页", "scores": {"order": -1}}]}, {"q": "你管理文献的方式是：", "options": [{"text": "文献软件里分类打标签，井井有条", "scores": {"order": 1}}, {"text": "全塞进一个收藏夹", "scores": {}}, {"text": "全靠记忆：那篇叫什么来着", "scores": {"order": -1}}]}, {"q": "群里有人甩来一篇高引新论文：", "options": [{"text": "当场点开精读，还顺手做了笔记", "scores": {"energy": 1}}, {"text": "转发给同学说回头一起看", "scores": {}}, {"text": "默默划走，收藏等于读过", "scores": {"energy": -1}}]}, {"q": "组会上你和师兄的观点撞了：", "options": [{"text": "摆证据，当场辩个明白", "scores": {"social": 1}}, {"text": "各留各的，回去都记下来", "scores": {}}, {"text": "懒得争，附和两句", "scores": {"social": -1}}]}, {"q": "读到一篇拍案叫绝的好论文：", "options": [{"text": "立刻转给同门疯狂安利", "scores": {"social": 1}}, {"text": "打好了朋友圈草稿又删了", "scores": {}}, {"text": "默默收进自己的文件夹", "scores": {"social": -1}}]}, {"q": "下周组会轮到你讲文献：", "options": [{"text": "逐页批注，讲稿写到凌晨", "scores": {"order": 1}}, {"text": "列三个要点，够用就行", "scores": {}}, {"text": "上台前一小时扫一眼", "scores": {"order": -1}}]}, {"q": "对待参考文献里的引用链，你：", "options": [{"text": "顺着滚雪球，能挖三层", "scores": {"order": 1}}, {"text": "点开一两条看看", "scores": {}}, {"text": "参考文献是什么，能吃吗", "scores": {"order": -1}}]}], "results": {"000": {"name": "闲云 · 佛系读者", "emoji": "🍃", "tags": ["随性", "低负担", "不焦虑"], "desc": "你读书像散步：随手抓起一本，读几页算几页，从不打卡，也不为「没读完」内耗。书对你来说不是任务，更像生活的背景音。", "strength": "从不焦虑，读书对你始终是享受。", "weak": "书架上躺着一排「读了一半」，偶尔也会眼馋别人的读书笔记。", "match": "考据 · 硬核书虫"}, "001": {"name": "茶馆 · 论文茶话会主理", "emoji": "☕", "tags": ["爱聊", "松弛", "信息灵通"], "desc": "正经读文献你未必最拼，但论「聊文献」你绝对是主理人。茶水间、群里、饭桌上，哪里有话题哪里就有你。", "strength": "信息灵通，总能第一时间带来最新进展和圈内动态。", "weak": "聊过的多，从头到尾读完的少，要防「听懂了」的错觉。", "match": "收藏家 · 吃灰文件夹主理"}, "010": {"name": "收藏家 · 吃灰文件夹主理", "emoji": "🗂️", "tags": ["分类控", "收藏党", "有备无患"], "desc": "你的文件夹分类比图书馆还专业，标签打得整整齐齐——虽然里面的论文大多还没打开过。「先收藏，以后读」是你的口头禅。", "strength": "手握一座井井有条的文献仓库，要什么随手就来。", "weak": "「以后」经常变成「永远不会」，记得定期清清收藏夹。", "match": "火苗 · 疯狂安利型读者"}, "011": {"name": "领读 · 划重点小能手", "emoji": "🔖", "tags": ["高效", "实用", "团队刚需"], "desc": "你未必每篇都精读，但你出的「三页看懂这篇论文」笔记是全组刚需。用最少的力气，撬动最大的信息量。", "strength": "信息压缩能力一流，是团队的效率外挂。", "weak": "重点划多了，偶尔也想要一次沉浸式通读的体验。", "match": "深潜 · 一头扎进去的人"}, "100": {"name": "深潜 · 一头扎进去的人", "emoji": "🤿", "tags": ["心流", "专注", "独立"], "desc": "一旦钻进一个问题，你可以独自读到忘记时间。世界安静下来，只剩你和文献的对话——这种心流时刻是你的快乐源泉。", "strength": "专注力惊人，难题在你面前会被一点点磨开。", "weak": "潜得太深，抬头才发现群里已经九十九加。", "match": "茶馆 · 论文茶话会主理"}, "101": {"name": "火苗 · 疯狂安利型读者", "emoji": "🔥", "tags": ["热情", "传播", "有感染力"], "desc": "读到好东西你根本憋不住，恨不得全宇宙都知道。你的安利是很多同学的文献入口，热情是你的名片。", "strength": "传播力满分，团队因你而信息流通。", "weak": "安利的速度偶尔比读的速度快，别让热情跑在理解前面。", "match": "考据 · 硬核书虫"}, "110": {"name": "考据 · 硬核书虫", "emoji": "📚", "tags": ["严谨", "深度", "可靠"], "desc": "引用套引用，你能顺着参考文献滚三层雪球。方法、数据、结论，每个数字都要回原文核对——严谨是你的本能。", "strength": "深度和可靠性俱佳，你说的话经得起追问。", "weak": "偶尔在「再查一条引用」里泡到凌晨，给好奇心设个闹钟。", "match": "火苗 · 疯狂安利型读者"}, "111": {"name": "六边形 · 全能型读者", "emoji": "🏅", "tags": ["全能", "闭环", "靠谱"], "desc": "会检索、会精读、会分享，你把读书这件事做成了完整闭环。组里的文献地图，一半是你画的。", "strength": "什么场景都能切换自如，是靠谱的文献领航员。", "weak": "什么都擅长的人，偶尔忘记自己也会累。", "match": "闲云 · 佛系读者"}}, "cta": "我也想要一个专属测试", "thresholds": {"energy": 0, "social": 0, "order": 0}, "rarity": {"000": 15.6, "001": 15.2, "010": 12.5, "011": 12.2, "100": 12.5, "101": 12.2, "110": 10.0, "111": 9.8}};
+const AXES = QUIZ.axes.map(a => a.key);
+const RESULTS = QUIZ.results;
+let index = 0, scores = {}, answers = [], lastDelta = {};
+function resetScores(){ scores = {}; lastDelta = {}; AXES.forEach(k => { scores[k] = 0; lastDelta[k] = 0; }); }
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+function startQuiz(){ resetScores(); answers = []; index = 0; renderQuestion(); show('quiz'); }
+function addScores(option){
+  const s = option.scores || {};
+  for (const k in s){
+    const v = s[k];
+    scores[k] = (scores[k]||0) + v;
+    if (v) lastDelta[k] = v;
+  }
+}
+function renderQuestion(){
+  const q = QUIZ.questions[index];
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+  document.getElementById('counter').textContent = (index+1) + ' / ' + QUIZ.questions.length;
+  document.getElementById('qtext').textContent = q.q;
+  const box = document.getElementById('options'); box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">' + 'ABC'[i] + '</span><span></span>';
+    btn.lastChild.textContent = opt.text;
+    btn.onclick = () => choose(i);
+    box.appendChild(btn);
+  });
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+}
+function choose(i){
+  const opt = QUIZ.questions[index].options[i];
+  resetFromAnswers(index);
+  answers[index] = i; addScores(opt); index++;
+  if (index < QUIZ.questions.length) { renderQuestion(); }
+  else { document.getElementById('bar').style.width = '100%'; renderResult(); }
+}
+function resetFromAnswers(upto){
+  resetScores();
+  for (let i = 0; i < upto; i++){ addScores(QUIZ.questions[i].options[answers[i]]); }
+}
+function prev(){
+  if (index === 0) return;
+  index--; resetFromAnswers(index); renderQuestion();
+}
+function resultKey(){
+  const T = QUIZ.thresholds || {};
+  return AXES.map(k => {
+    const v = scores[k];
+    const t = (typeof T[k] === 'number') ? T[k] : -0.5;
+    if (v > t) return '1';
+    if (v === t && (lastDelta[k] || 0) > 0) return '1';
+    return '0';
+  }).join('');
+}
+function renderResult(forcedKey){
+  const key = forcedKey || resultKey();
+  const r = RESULTS[key] || RESULTS[Object.keys(RESULTS)[0]];
+  document.getElementById('r-emoji').textContent = r.emoji;
+  document.getElementById('r-name').textContent = r.name;
+  document.getElementById('r-desc').textContent = r.desc;
+  document.getElementById('r-strength').textContent = r.strength;
+  document.getElementById('r-weak').textContent = r.weak;
+  document.getElementById('r-match').textContent = '💞 合拍类型：' + r.match;
+  document.getElementById('r-tags').innerHTML = '';
+  (r.tags || []).forEach(t => { const s = document.createElement('span'); s.className='tag'; s.textContent=t; document.getElementById('r-tags').appendChild(s); });
+  const rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;
+  if (rare) {
+    const label = rare < 6 ? '隐藏款' : rare < 10 ? '稀有' : rare < 15 ? '少见' : '常见';
+    document.getElementById('r-rarity').textContent = '稀有度 ' + label + ' · 只有 ' + rare + '% 的人会测到';
+  } else { document.getElementById('r-rarity').textContent = ''; }
+  document.getElementById('r-hint').textContent = QUIZ.share_hint;
+  try { history.replaceState(null, '', '#r=' + key); } catch(e) {}
+  show('result');
+}
+function restart(){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+  resetScores(); answers = []; index = 0; show('cover'); }
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+function shareResult(){
+  const key = resultKey();
+  const url = location.origin + location.pathname + location.search + '#r=' + key;
+  const text = '我测出来是「' + document.getElementById('r-name').textContent + '」，你也来测测？';
+  if (navigator.share) { navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('链接已复制，去粘贴给朋友吧'); } catch(e) { toast(url); }
+    document.body.removeChild(ta); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('链接已复制，去粘贴给朋友吧')).catch(fallback);
+  } else { fallback(); }
+}
+(function deepLink(){
+  const m = (location.hash || '').match(/^#r=([01]{3})$/);
+  if (m && RESULTS[m[1]]) {
+    document.getElementById('kicker').textContent = 'TA 是';
+    renderResult(m[1]);
+    document.getElementById('kicker').textContent = 'TA 是';
+  }
+})();
+</script>
+</body>
+</html>

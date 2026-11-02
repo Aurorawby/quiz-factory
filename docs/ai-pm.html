@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测测你是哪种 AI 产品经理</title>
+<meta name="description" content="8 道题，2 分钟，测出你的产品人格。面试前测一测，顺便想想短板。">
+<style>
+  :root{
+    --accent: #ff7a45;
+    --accent-soft: #ffe8dc;
+    --ink:#1f1b16; --muted:#7a7268; --card:#ffffff; --bg:#f7f2ea;
+    --radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #ffe9c9, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:560px}
+  .screen{display:none;animation:in .35s ease both}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+  .cover{text-align:center;padding:40px 26px 32px}
+  .cover .big-emoji{font-size:76px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.12))}
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:.5px}
+  .subtitle{color:var(--muted);font-size:15px;line-height:1.7;margin:0 auto 22px;max-width:26em}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .btn{
+    display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font-size:17px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,69,.28);
+    transition:transform .15s ease,box-shadow .15s ease
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}
+  .hint{color:var(--muted);font-size:12px;margin-top:14px}
+  /* 答题 */
+  .progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}
+  .meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:22px}
+  .back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}
+  .qtext{font-size:23px;line-height:1.5;font-weight:700;margin:6px 0 24px;letter-spacing:.3px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .option{
+    display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;
+    background:#fff;border:1.5px solid #eee2d2;border-radius:16px;padding:16px 18px;font-size:16.5px;
+    color:var(--ink);line-height:1.5;transition:all .16s ease
+  }
+  .option:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .option:active{background:var(--accent-soft)}
+  .option .letter{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center
+  }
+  /* 结果 */
+  .result{text-align:center}
+  .result .big-emoji{font-size:82px;line-height:1;margin:2px 0 6px}
+  .result .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}
+  .result h2{font-size:27px;margin:10px 0 12px}
+  .tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .rarity{color:var(--muted);font-size:12.5px;margin:0 0 18px;letter-spacing:.5px}
+  .desc{color:#4b443b;font-size:15.5px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:18px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;text-align:left}
+  .mini{background:#fbf7f1;border-radius:16px;padding:16px}
+  .mini h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:1px}
+  .mini p{margin:0;font-size:14px;line-height:1.65;color:#3f3a32}
+  .match{background:#fff7ea;border:1px dashed #e8cfa8;border-radius:16px;padding:14px 16px;font-size:14px;color:#7a5622;text-align:left;margin-bottom:22px}
+  .share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .share .btn{padding:14px 12px;font-size:15px}
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:18px}
+  .footer a{color:#8a5a1f;text-decoration:none}
+  @media (max-width:420px){ h1{font-size:26px} .qtext{font-size:20px} .cover{padding:32px 20px 26px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 封面 -->
+  <div class="screen active" id="cover">
+    <div class="card cover">
+      <div class="big-emoji">🧠</div>
+      <h1>测测你是哪种 AI 产品经理</h1>
+      <p class="subtitle">8 道题，2 分钟，测出你的产品人格。面试前测一测，顺便想想短板。</p>
+      <div class="chips">
+        <span class="chip">📝 8 道题</span>
+        <span class="chip">⏱ 约 2 分钟</span>
+        <span class="chip">🎭 8 种结果</span>
+      </div>
+      <button class="btn" onclick="startQuiz()">开始测试 →</button>
+      <p class="hint">凭直觉选，没有标准答案</p>
+    </div>
+    <div class="footer">由 <b>Quiz Factory</b> 生成 · 单文件离线可用</div>
+  </div>
+
+  <!-- 答题 -->
+  <div class="screen" id="quiz">
+    <div class="card">
+      <div class="progress"><i id="bar"></i></div>
+      <div class="meta-row">
+        <button class="back" onclick="prev()">← 上一题</button>
+        <span id="counter"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="screen" id="result">
+    <div class="card result">
+      <div class="kicker" id="kicker">你 是</div>
+      <div class="big-emoji" id="r-emoji"></div>
+      <h2 id="r-name"></h2>
+      <div class="tags" id="r-tags"></div>
+      <div class="rarity" id="r-rarity"></div>
+      <div class="desc" id="r-desc"></div>
+      <div class="grid">
+        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>
+        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>
+      </div>
+      <div class="match" id="r-match"></div>
+      <div class="share">
+        <button class="btn" onclick="shareResult()">📤 分享结果</button>
+        <button class="btn ghost" onclick="restart()">🔄 再测一次</button>
+      </div>
+      <p class="hint" id="r-hint"></p>
+    </div>
+    <div class="footer">我也想做一个专属测试 · <a href="index.html">也做一个</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const QUIZ = {"slug": "ai-pm", "title": "测测你是哪种 AI 产品经理", "subtitle": "8 道题，2 分钟，测出你的产品人格。面试前测一测，顺便想想短板。", "emoji": "🧠", "est_minutes": 2, "share_hint": "把你测出来的类型发我，我帮你想想面试怎么讲。", "cta": "我也想做一个专属测试", "cta_url": "index.html", "axes": [{"key": "depth", "neg": "先跑起来再说", "pos": "先把问题想透"}, {"key": "team", "neg": "自己闷头搞定", "pos": "拉着一群人干"}, {"key": "risk", "neg": "稳一点，别翻车", "pos": "赌一把，抢窗口"}], "questions": [{"q": "拿到一个特别模糊的需求，你第一步会？", "options": [{"text": "先约几个用户聊，把问题定义清楚", "scores": {"depth": 1}}, {"text": "先画个粗糙原型，看看大家反应", "scores": {}}, {"text": "先上线一版看数据，别想太多", "scores": {"depth": -1}}]}, {"q": "要评估一个新模型的能力边界，你会？", "options": [{"text": "读论文、跑 benchmark，把边界摸透", "scores": {"depth": 1}}, {"text": "看几个 demo，大概心里有数", "scores": {}}, {"text": "能用就行，先接进去再说", "scores": {"depth": -1}}]}, {"q": "写 PRD 的时候，你更接近？", "options": [{"text": "边界条件、异常路径全写清楚", "scores": {"depth": 1}}, {"text": "核心流程写清，细节边做边补", "scores": {}}, {"text": "先写一页纸，做完再补文档", "scores": {"depth": -1}}]}, {"q": "项目卡在一个别人负责的环节，你会？", "options": [{"text": "自己加班把它顶下来", "scores": {"team": -1}}, {"text": "找对应的人，一对一催一下", "scores": {}}, {"text": "拉个跨部门会，当场把责任拍清楚", "scores": {"team": 1}}]}, {"q": "你的周报/周会风格是？", "options": [{"text": "写完发出去就行，别麻烦别人", "scores": {"team": -1}}, {"text": "同步进度，顺便标一下风险", "scores": {}}, {"text": "主动组局，把上下游拉到一起对齐", "scores": {"team": 1}}]}, {"q": "有一个新想法，你更常怎么做？", "options": [{"text": "自己先验证，成熟了再往外说", "scores": {"team": -1}}, {"text": "找一两个信得过的人聊聊", "scores": {}}, {"text": "直接找老板或客户聊，边聊边改", "scores": {"team": 1}}]}, {"q": "竞对先发了同类功能，你？", "options": [{"text": "先观察，不急着跟", "scores": {"risk": -1}}, {"text": "评估一下投入产出，再决定跟不跟", "scores": {}}, {"text": "立刻上，先把用户心智占了", "scores": {"risk": 1}}]}, {"q": "资源只够推一个方向，你选？", "options": [{"text": "确定性最高的那个", "scores": {"risk": -1}}, {"text": "投入产出比最好的那个", "scores": {}}, {"text": "想象空间最大的那个", "scores": {"risk": 1}}]}], "results": {"000": {"name": "老练操盘手", "emoji": "🎯", "tags": ["经验派", "稳准快", "结果导向"], "desc": "你不追新概念，先看这件事能不能成。别人在讨论 AGI，你在算这个功能能带来多少留存。你的判断往往不是最性感，但通常是对的——因为你见过太多「听起来很美」的项目死在半路。", "strength": "判断快、落地稳，能把一个模糊机会变成可执行的节奏。", "weak": "容易低估新技术的窗口期，慢半拍。", "match": "跟「前沿赌徒」互补：TA 找方向，你算账。"}, "001": {"name": "野路子增长黑客", "emoji": "🦊", "tags": ["试错快", "敢赌", "流量嗅觉"], "desc": "你不喜欢等资源，先上线、先投流、先看数据，错了就换。你的项目常常死得快，但只要活下来一个，就能带来惊喜。你是团队里那个「不管怎样先试试」的人。", "strength": "启动速度极快，能在别人开会时把第一版跑出来。", "weak": "容易忽视长期体验，产品债堆到后面很难还。", "match": "跟「实验室型 PM」互补：你冲，TA 帮你把地基打牢。"}, "010": {"name": "推进器型 PM", "emoji": "⚙️", "tags": ["执行强", "资源整合", "靠谱"], "desc": "你最擅长把一群人的力气拧成一个方向：谁负责什么、什么时候要、卡在哪，你门儿清。你不一定是最有想法的人，但你带的项目通常都能按时上线。", "strength": "跨团队推动力强，能把「不可能」排期变成能落地的里程碑。", "weak": "忙起来容易只盯进度，忘了问「这个方向对不对」。", "match": "跟「军师型 PM」互补：一个想清楚，一个推下去。"}, "011": {"name": "发布会型 PM", "emoji": "📣", "tags": ["有感染力", "抢窗口", "外向"], "desc": "你是那种能在发布会上把功能讲成故事的人，既能拉着团队一起冲，也敢在窗口期下重注。你的项目往往声量很大，用户增长也快，但你也得提防「声势大过产品」。", "strength": "对外表达和内部动员能力都强，天生适合打「抢时间」的仗。", "weak": "容易为了赶节点牺牲质量，后面返工成本高。", "match": "跟「实验室型 PM」互补：你造势，TA 保证别翻车。"}, "100": {"name": "实验室型 PM", "emoji": "🔬", "tags": ["想得深", "技术宅", "严谨"], "desc": "你喜欢把一个问题拆到不能再拆，再决定要不要做。你能看懂论文、能跟算法同学吵技术方案，产品逻辑严密。代价是：你常常想得太久，错过最佳上线时机。", "strength": "复杂问题的拆解能力强，能做出别人做不出的深度。", "weak": "决策偏慢，容易陷入「再研究一下」。", "match": "跟「发布会型 PM」互补：TA 推你上线，你帮 TA 把方案做实。"}, "101": {"name": "前沿赌徒", "emoji": "🎲", "tags": ["押注未来", "技术信仰", "独行"], "desc": "你相信下一次模型升级会重写产品规则，所以愿意在别人看不懂的时候先下注。你经常一个人闷头做 demo，做出来才给世界看。你可能对，也可能错得很惨，但你不后悔下注。", "strength": "对技术趋势敏感，能在早期看到别人没看到的机会。", "weak": "容易高估技术成熟度，也容易低估团队协作的成本。", "match": "跟「老练操盘手」互补：你赌未来，TA 保当下。"}, "110": {"name": "军师型 PM", "emoji": "🧭", "tags": ["结构化", "协同", "稳健"], "desc": "你擅长把复杂问题拆成大家都能听懂的语言，然后拉着一群人一起走。你既懂用户也懂技术，是团队里那个「能把事情讲清楚」的人。你不抢功，但项目离开你会乱。", "strength": "结构化思考和跨团队沟通是你的核心竞争力。", "weak": "决策偏保守，遇到需要孤注一掷的时刻会犹豫。", "match": "跟「推进器型 PM」互补：你出思路，TA 去落地。"}, "111": {"name": "攻坚队长", "emoji": "🚀", "tags": ["敢打硬仗", "带队", "激进"], "desc": "你既想得深，又拉得动人，还敢在关键时刻下重注。别人还在评估，你已经把团队组织起来开干了。你适合打「攻坚型」的仗，但也最容易把自己和团队烧尽。", "strength": "能把困难目标拆解、组织资源并在窗口期打穿。", "weak": "节奏太猛，容易忽略团队情绪和长期产品健康。", "match": "跟「军师型 PM」互补：你冲锋，TA 帮你稳住阵脚。"}}, "thresholds": {"depth": 0, "team": 0, "risk": 0}, "rarity": {"000": 14.9, "001": 11.9, "010": 13.9, "011": 11.1, "100": 13.9, "101": 11.1, "110": 12.9, "111": 10.3}};
+const AXES = QUIZ.axes.map(a => a.key);
+const RESULTS = QUIZ.results;
+let index = 0, scores = {}, answers = [], lastDelta = {};
+function resetScores(){ scores = {}; lastDelta = {}; AXES.forEach(k => { scores[k] = 0; lastDelta[k] = 0; }); }
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+function startQuiz(){ resetScores(); answers = []; index = 0; renderQuestion(); show('quiz'); }
+function addScores(option){
+  const s = option.scores || {};
+  for (const k in s){
+    const v = s[k];
+    scores[k] = (scores[k]||0) + v;
+    if (v) lastDelta[k] = v;
+  }
+}
+function renderQuestion(){
+  const q = QUIZ.questions[index];
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+  document.getElementById('counter').textContent = (index+1) + ' / ' + QUIZ.questions.length;
+  document.getElementById('qtext').textContent = q.q;
+  const box = document.getElementById('options'); box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">' + 'ABC'[i] + '</span><span></span>';
+    btn.lastChild.textContent = opt.text;
+    btn.onclick = () => choose(i);
+    box.appendChild(btn);
+  });
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+}
+function choose(i){
+  const opt = QUIZ.questions[index].options[i];
+  resetFromAnswers(index);
+  answers[index] = i; addScores(opt); index++;
+  if (index < QUIZ.questions.length) { renderQuestion(); }
+  else { document.getElementById('bar').style.width = '100%'; renderResult(); }
+}
+function resetFromAnswers(upto){
+  resetScores();
+  for (let i = 0; i < upto; i++){ addScores(QUIZ.questions[i].options[answers[i]]); }
+}
+function prev(){
+  if (index === 0) return;
+  index--; resetFromAnswers(index); renderQuestion();
+}
+function resultKey(){
+  const T = QUIZ.thresholds || {};
+  return AXES.map(k => {
+    const v = scores[k];
+    const t = (typeof T[k] === 'number') ? T[k] : -0.5;
+    if (v > t) return '1';
+    if (v === t && (lastDelta[k] || 0) > 0) return '1';
+    return '0';
+  }).join('');
+}
+function renderResult(forcedKey){
+  const key = forcedKey || resultKey();
+  const r = RESULTS[key] || RESULTS[Object.keys(RESULTS)[0]];
+  document.getElementById('r-emoji').textContent = r.emoji;
+  document.getElementById('r-name').textContent = r.name;
+  document.getElementById('r-desc').textContent = r.desc;
+  document.getElementById('r-strength').textContent = r.strength;
+  document.getElementById('r-weak').textContent = r.weak;
+  document.getElementById('r-match').textContent = '💞 合拍类型：' + r.match;
+  document.getElementById('r-tags').innerHTML = '';
+  (r.tags || []).forEach(t => { const s = document.createElement('span'); s.className='tag'; s.textContent=t; document.getElementById('r-tags').appendChild(s); });
+  const rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;
+  if (rare) {
+    const label = rare < 6 ? '隐藏款' : rare < 10 ? '稀有' : rare < 15 ? '少见' : '常见';
+    document.getElementById('r-rarity').textContent = '稀有度 ' + label + ' · 只有 ' + rare + '% 的人会测到';
+  } else { document.getElementById('r-rarity').textContent = ''; }
+  document.getElementById('r-hint').textContent = QUIZ.share_hint;
+  try { history.replaceState(null, '', '#r=' + key); } catch(e) {}
+  show('result');
+}
+function restart(){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+  resetScores(); answers = []; index = 0; show('cover'); }
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+function shareResult(){
+  const key = resultKey();
+  const url = location.origin + location.pathname + location.search + '#r=' + key;
+  const text = '我测出来是「' + document.getElementById('r-name').textContent + '」，你也来测测？';
+  if (navigator.share) { navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('链接已复制，去粘贴给朋友吧'); } catch(e) { toast(url); }
+    document.body.removeChild(ta); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('链接已复制，去粘贴给朋友吧')).catch(fallback);
+  } else { fallback(); }
+}
+(function deepLink(){
+  const m = (location.hash || '').match(/^#r=([01]{3})$/);
+  if (m && RESULTS[m[1]]) {
+    document.getElementById('kicker').textContent = 'TA 是';
+    renderResult(m[1]);
+    document.getElementById('kicker').textContent = 'TA 是';
+  }
+})();
+</script>
+</body>
+</html>

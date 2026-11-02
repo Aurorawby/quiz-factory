@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测测你的期末复习风格：卷王还是躺平侠</title>
+<meta name="description" content="快速测出你的复习风格">
+<style>
+  :root{
+    --accent: #d98600;
+    --accent-soft: #fff0cf;
+    --ink:#1f1b16; --muted:#7a7268; --card:#ffffff; --bg:#f7f2ea;
+    --radius:20px; --shadow:0 12px 32px rgba(60,42,20,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #ffe9c9, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:560px}
+  .screen{display:none;animation:in .35s ease both}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+  .cover{text-align:center;padding:40px 26px 32px}
+  .cover .big-emoji{font-size:76px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.12))}
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:.5px}
+  .subtitle{color:var(--muted);font-size:15px;line-height:1.7;margin:0 auto 22px;max-width:26em}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .btn{
+    display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font-size:17px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(255,122,69,.28);
+    transition:transform .15s ease,box-shadow .15s ease
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.06);border:1px solid #eadfd0}
+  .hint{color:var(--muted);font-size:12px;margin-top:14px}
+  /* 答题 */
+  .progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}
+  .meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:22px}
+  .back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}
+  .qtext{font-size:23px;line-height:1.5;font-weight:700;margin:6px 0 24px;letter-spacing:.3px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .option{
+    display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;
+    background:#fff;border:1.5px solid #eee2d2;border-radius:16px;padding:16px 18px;font-size:16.5px;
+    color:var(--ink);line-height:1.5;transition:all .16s ease
+  }
+  .option:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .option:active{background:var(--accent-soft)}
+  .option .letter{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center
+  }
+  /* 结果 */
+  .result{text-align:center}
+  .result .big-emoji{font-size:82px;line-height:1;margin:2px 0 6px}
+  .result .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}
+  .result h2{font-size:27px;margin:10px 0 12px}
+  .tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .rarity{color:var(--muted);font-size:12.5px;margin:0 0 18px;letter-spacing:.5px}
+  .desc{color:#4b443b;font-size:15.5px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:18px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;text-align:left}
+  .mini{background:#fbf7f1;border-radius:16px;padding:16px}
+  .mini h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:1px}
+  .mini p{margin:0;font-size:14px;line-height:1.65;color:#3f3a32}
+  .match{background:#fff7ea;border:1px dashed #e8cfa8;border-radius:16px;padding:14px 16px;font-size:14px;color:#7a5622;text-align:left;margin-bottom:22px}
+  .share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .share .btn{padding:14px 12px;font-size:15px}
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:18px}
+  .footer a{color:#8a5a1f;text-decoration:none}
+  @media (max-width:420px){ h1{font-size:26px} .qtext{font-size:20px} .cover{padding:32px 20px 26px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 封面 -->
+  <div class="screen active" id="cover">
+    <div class="card cover">
+      <div class="big-emoji">🎯</div>
+      <h1>测测你的期末复习风格：卷王还是躺平侠</h1>
+      <p class="subtitle">快速测出你的复习风格</p>
+      <div class="chips">
+        <span class="chip">📝 8 道题</span>
+        <span class="chip">⏱ 约 2 分钟</span>
+        <span class="chip">🎭 8 种结果</span>
+      </div>
+      <button class="btn" onclick="startQuiz()">开始测试 →</button>
+      <p class="hint">凭直觉选，没有标准答案</p>
+    </div>
+    <div class="footer">由 <b>Quiz Factory</b> 生成 · 单文件离线可用</div>
+  </div>
+
+  <!-- 答题 -->
+  <div class="screen" id="quiz">
+    <div class="card">
+      <div class="progress"><i id="bar"></i></div>
+      <div class="meta-row">
+        <button class="back" onclick="prev()">← 上一题</button>
+        <span id="counter"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="screen" id="result">
+    <div class="card result">
+      <div class="kicker" id="kicker">你 是</div>
+      <div class="big-emoji" id="r-emoji"></div>
+      <h2 id="r-name"></h2>
+      <div class="tags" id="r-tags"></div>
+      <div class="rarity" id="r-rarity"></div>
+      <div class="desc" id="r-desc"></div>
+      <div class="grid">
+        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>
+        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>
+      </div>
+      <div class="match" id="r-match"></div>
+      <div class="share">
+        <button class="btn" onclick="shareResult()">📤 分享结果</button>
+        <button class="btn ghost" onclick="restart()">🔄 再测一次</button>
+      </div>
+      <p class="hint" id="r-hint"></p>
+    </div>
+    <div class="footer">我也想要一个专属测试 · <a href="#">也做一个</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const QUIZ = {"slug": "study-style", "title": "测测你的期末复习风格：卷王还是躺平侠", "subtitle": "快速测出你的复习风格", "emoji": "🎯", "est_minutes": 2, "share_hint": "分享你的复习风格，看室友是不是同一类", "axes": [{"key": "energy", "neg": "容易疲倦", "pos": "精力充沛"}, {"key": "social", "neg": "喜欢独处", "pos": "喜欢结伴"}, {"key": "order", "neg": "不太讲究", "pos": "讲究条理"}], "questions": [{"q": "期末周晚上十点，你的状态是？", "options": [{"text": "还能再战一套卷", "scores": {"energy": 1}}, {"text": "刷会儿手机回血", "scores": {}}, {"text": "已经瘫在床上动弹不得", "scores": {"energy": -1}}]}, {"q": "复习搭子这个话题，你的态度是？", "options": [{"text": "拉着朋友一起讨论", "scores": {"social": 1}}, {"text": "自己一个人整理思路", "scores": {}}, {"text": "独自埋头苦读才是正解", "scores": {"social": -1}}]}, {"q": "你的复习计划长什么样？", "options": [{"text": "有计划地分章节推进", "scores": {"order": 1}}, {"text": "哪里觉得虚就先补哪里", "scores": {}}, {"text": "只复习觉得重要的章节", "scores": {"order": -1}}]}, {"q": "模拟考来了，你会？", "options": [{"text": "约同学一起做模拟题", "scores": {"social": 1}}, {"text": "自己独立完成", "scores": {}}, {"text": "模拟？直接裸考上场", "scores": {"social": -1}}]}, {"q": "复习清单你会怎么列？", "options": [{"text": "列出所有考点，逐个打勾", "scores": {"order": 1}}, {"text": "边看边补，动态调整", "scores": {}}, {"text": "清单是什么？跟着感觉走", "scores": {"order": -1}}]}, {"q": "复习计划被室友的聚餐打断，你？", "options": [{"text": "吃完回来接着学", "scores": {"energy": 1}}, {"text": "边吃边惦记着复习", "scores": {}}, {"text": "索性摆了，明天再说", "scores": {"energy": -1}}]}, {"q": "一道题卡了半小时，你会？", "options": [{"text": "拉个群互相讲题", "scores": {"social": 1}}, {"text": "先自己搜，搜不到再问", "scores": {}}, {"text": "一个人的事，别麻烦别人", "scores": {"social": -1}}]}, {"q": "好几门连着考，你怎么排？", "options": [{"text": "按考试时间倒排进度", "scores": {"order": 1}}, {"text": "哪门先考就先看哪门", "scores": {}}, {"text": "只复习自己擅长的科目", "scores": {"order": -1}}]}], "results": {"000": {"name": "懒猫 · 躺平大师", "emoji": "🐱", "tags": ["佛系", "悠闲", "不操心"], "desc": "你习惯独自一人，窝在温暖的角落，慢慢消化知识点。慵懒的午后时光，最适合你了。", "strength": "悠闲自在，不疾不徐。", "weak": "有时会拖延，记得给自己定个闹钟哦。", "match": "社交怪 · 复习小分队"}, "001": {"name": "孤狼 · 单打独斗", "emoji": "🐺", "tags": ["自律", "专注", "独立"], "desc": "你独自复习时最高效，不受外界干扰。夜晚的图书馆，常常有你的身影。", "strength": "自律专注，无人能及。", "weak": "偶尔会忽略休息，记得照顾好自己。", "match": "书虫 · 独乐书"}, "010": {"name": "书虫 · 独乐书", "emoji": "📚", "tags": ["安静", "深思", "专注"], "desc": "安静的夜晚，适合你独自钻研。沉浸在书本的世界里，仿佛与世隔绝。", "strength": "深度专注，思维敏捷。", "weak": "偶尔会过于安静，朋友们都去哪儿了？", "match": "条理派 · 清晰大脑"}, "011": {"name": "社交怪 · 复习小分队", "emoji": "👥", "tags": ["合作", "互助", "活跃"], "desc": "复习路上从不孤单，你总能找到志同道合的朋友。你们一起分享，一起进步。", "strength": "合作互助，效率倍增。", "weak": "有时候会过于依赖别人，记得也要自己努力。", "match": "夜猫子 · 深夜英雄"}, "100": {"name": "条理派 · 清晰大脑", "emoji": "🧠", "tags": ["有序", "规划", "高效"], "desc": "你追求条理，喜欢把复习计划写得满满当当。这样你才能感受到成就感。", "strength": "井井有条，事事有规划。", "weak": "有时过于追求完美，不妨放松一下。", "match": "社交怪 · 复习小分队"}, "101": {"name": "夜猫子 · 深夜英雄", "emoji": "🌙", "tags": ["熬夜", "专注", "高效"], "desc": "夜晚的灯光下，你最精神。专注力惊人，夜深人静时，你开始大显身手。", "strength": "专注高效，成就卓越。", "weak": "容易熬夜，记得早点休息。", "match": "书虫 · 独乐书"}, "110": {"name": "交际花 · 社交复习", "emoji": "👭", "tags": ["互动", "分享", "活跃"], "desc": "你把复习变成一场社交派对，和朋友们一起分享学习心得，气氛热烈。", "strength": "互动分享，氛围活跃。", "weak": "有时候会过于兴奋，记得保持专注。", "match": "条理派 · 清晰大脑"}, "111": {"name": "全能王 · 复习达人", "emoji": "🏆", "tags": ["全能", "高效", "自律"], "desc": "你全能又高效，是真正的复习达人。无论是独自奋斗还是团队协作，你都能游刃有余。", "strength": "全能高效，无人能及。", "weak": "偶尔会太忙，记得也要享受生活。", "match": "社交怪 · 复习小分队"}}, "cta": "我也想要一个专属测试", "thresholds": {"energy": 0, "social": 0, "order": 0}, "rarity": {"000": 14.9, "001": 13.9, "010": 13.9, "011": 12.9, "100": 11.9, "101": 11.1, "110": 11.1, "111": 10.3}};
+const AXES = QUIZ.axes.map(a => a.key);
+const RESULTS = QUIZ.results;
+let index = 0, scores = {}, answers = [], lastDelta = {};
+function resetScores(){ scores = {}; lastDelta = {}; AXES.forEach(k => { scores[k] = 0; lastDelta[k] = 0; }); }
+function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+function startQuiz(){ resetScores(); answers = []; index = 0; renderQuestion(); show('quiz'); }
+function addScores(option){
+  const s = option.scores || {};
+  for (const k in s){
+    const v = s[k];
+    scores[k] = (scores[k]||0) + v;
+    if (v) lastDelta[k] = v;
+  }
+}
+function renderQuestion(){
+  const q = QUIZ.questions[index];
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+  document.getElementById('counter').textContent = (index+1) + ' / ' + QUIZ.questions.length;
+  document.getElementById('qtext').textContent = q.q;
+  const box = document.getElementById('options'); box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">' + 'ABC'[i] + '</span><span></span>';
+    btn.lastChild.textContent = opt.text;
+    btn.onclick = () => choose(i);
+    box.appendChild(btn);
+  });
+  document.getElementById('bar').style.width = ((index) / QUIZ.questions.length * 100) + '%';
+}
+function choose(i){
+  const opt = QUIZ.questions[index].options[i];
+  resetFromAnswers(index);
+  answers[index] = i; addScores(opt); index++;
+  if (index < QUIZ.questions.length) { renderQuestion(); }
+  else { document.getElementById('bar').style.width = '100%'; renderResult(); }
+}
+function resetFromAnswers(upto){
+  resetScores();
+  for (let i = 0; i < upto; i++){ addScores(QUIZ.questions[i].options[answers[i]]); }
+}
+function prev(){
+  if (index === 0) return;
+  index--; resetFromAnswers(index); renderQuestion();
+}
+function resultKey(){
+  const T = QUIZ.thresholds || {};
+  return AXES.map(k => {
+    const v = scores[k];
+    const t = (typeof T[k] === 'number') ? T[k] : -0.5;
+    if (v > t) return '1';
+    if (v === t && (lastDelta[k] || 0) > 0) return '1';
+    return '0';
+  }).join('');
+}
+function renderResult(forcedKey){
+  const key = forcedKey || resultKey();
+  const r = RESULTS[key] || RESULTS[Object.keys(RESULTS)[0]];
+  document.getElementById('r-emoji').textContent = r.emoji;
+  document.getElementById('r-name').textContent = r.name;
+  document.getElementById('r-desc').textContent = r.desc;
+  document.getElementById('r-strength').textContent = r.strength;
+  document.getElementById('r-weak').textContent = r.weak;
+  document.getElementById('r-match').textContent = '💞 合拍类型：' + r.match;
+  document.getElementById('r-tags').innerHTML = '';
+  (r.tags || []).forEach(t => { const s = document.createElement('span'); s.className='tag'; s.textContent=t; document.getElementById('r-tags').appendChild(s); });
+  const rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;
+  if (rare) {
+    const label = rare < 6 ? '隐藏款' : rare < 10 ? '稀有' : rare < 15 ? '少见' : '常见';
+    document.getElementById('r-rarity').textContent = '稀有度 ' + label + ' · 只有 ' + rare + '% 的人会测到';
+  } else { document.getElementById('r-rarity').textContent = ''; }
+  document.getElementById('r-hint').textContent = QUIZ.share_hint;
+  try { history.replaceState(null, '', '#r=' + key); } catch(e) {}
+  show('result');
+}
+function restart(){ try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+  resetScores(); answers = []; index = 0; show('cover'); }
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1800); }
+function shareResult(){
+  const key = resultKey();
+  const url = location.origin + location.pathname + location.search + '#r=' + key;
+  const text = '我测出来是「' + document.getElementById('r-name').textContent + '」，你也来测测？';
+  if (navigator.share) { navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('链接已复制，去粘贴给朋友吧'); } catch(e) { toast(url); }
+    document.body.removeChild(ta); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('链接已复制，去粘贴给朋友吧')).catch(fallback);
+  } else { fallback(); }
+}
+(function deepLink(){
+  const m = (location.hash || '').match(/^#r=([01]{3})$/);
+  if (m && RESULTS[m[1]]) {
+    document.getElementById('kicker').textContent = 'TA 是';
+    renderResult(m[1]);
+    document.getElementById('kicker').textContent = 'TA 是';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "theme": "测测你的期末复习风格",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "slug": "study-style",
+  "stages": [
+    {
+      "stage": "skeleton",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    },
+    {
+      "stage": "questions",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    },
+    {
+      "stage": "copy",
+      "attempts": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "ok": true,
+      "tries": 1
+    }
+  ],
+  "first_pass": true,
+  "final_problems": [],
+  "needs_polish": false,
+  "distribution": {
+    "000": 14.9,
+    "001": 13.9,
+    "010": 13.9,
+    "011": 12.9,
+    "100": 11.9,
+    "101": 11.1,
+    "110": 11.1,
+    "111": 10.3
+  },
+  "seconds": 327.2
+}
